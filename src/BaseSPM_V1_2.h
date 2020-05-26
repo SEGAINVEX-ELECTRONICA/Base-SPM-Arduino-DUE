@@ -5,6 +5,7 @@
 	Proyecto: Base SPM con Arduino DUE (Programación)
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
+	25/05/2020
 */
 #include <Arduino.h>
 #include "Muestras.h" //Array para guardar muestras del ADC

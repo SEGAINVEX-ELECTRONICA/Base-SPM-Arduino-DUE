@@ -11,13 +11,12 @@
 	1-	Esta versión no contempla la programación del mando
 		infrarojo.
 	2- He programado el acelerómetro	
-	
+	25/05/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
 	
 	This file is part of Base SPM
-
     Base SPM is free software: you  can redistribute  it and/or modify 
 	itunder the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version  3 of  the License, or
@@ -27,10 +26,8 @@
 	useful,but WITHOUT ANY WARRANTY ; without even the implied warranty 
 	of MERCHANTABILITY or FITNESS FOR A PARTICULARPURPOSE.  See the GNU 
 	General Public License for more details.
-
     You  should have received a copy  of the GNU General Public License
     along with BaseSPM.c  If not, see <http://www.gnu.org/licenses/>
-
 ***************************************************************************/	
 /*
 		TO DO
@@ -38,7 +35,6 @@
 		habría que implantarlo en este programa y comprobar tiempos
 		de ejecución y efectividad. Hay que ajustar el filtro antialiasing
 		con la capacidad del polo o con la frecuencia de muestreo
-
 	-2.	Sería interesante una función que envie las señales del fotodiodo 
 		y/o el acelerómetro con una tasa alta (he comprobado que podría llegar
 		a 35ms)
@@ -465,7 +461,6 @@ void activa_48V(void)// Activa la fuente de 48V
 		 ver como detectar que no se mueven
 		 motores para desactivar los 48 voltios
 		 automáticamente
-
 	*/
 	if(!digitalRead(DSP_48V)) return; //Si el bit del DSP está a 0, no se encienden los 48V
 	 
@@ -498,7 +493,6 @@ void desactiva_48V(void)// Desactiva la fuente de 48V
 	TO DO
 	SI SE PERMITIERA EN UN FUTURO CAMBIAR DE ONDA HABRÍA QUE COMPROBAR
 	QUE LA RESOLUCION ES COMPATIBLE CON EL MODO DE ONDA ELEGIDO
-
 	Los modos de onda posibles son:
 	#define OMEGA564 3
 	#define SINE1S85 2
@@ -1038,7 +1032,8 @@ void pc_sensor_temperatura_humedad(void)
  * **********************************************************************/
 void pc_acelerometro(void)
 {
-	float EjeX,EjeY,EjeZ; //
+	float EjeX,EjeY; //
+	//float EjeZ;
 	char respuesta[36];
 	TEST_ACELEROMETRO_1
 	if(BaseScpi.FinComando[0]!='?')
