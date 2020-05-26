@@ -30,7 +30,7 @@ Desarrollado con LabWindos/CVI con licencia para SEGAINVEX-Electrónica.
 
 # [MANUAL DE COMANDOS](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/Manual.pdf)
 ## 
-#IMAGENES DEL PROYECTO
+# IMAGENES DEL PROYECTO
 ##
 ![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen1.png "Optional title")
 ![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen2.png "Optional title")
