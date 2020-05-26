@@ -24,14 +24,14 @@ Para el sensor de humedad y temperatura SHT11 (obsoleto)
 
 Para utilizar un acelerómetro MMA8452Q para nivelar la cabeza.
 
-# SOFTWARE PARA TEST
+# [SOFTWARE PARA TEST](https://github.com/PatricioCoronado/BaseSPM_CVI)
 Desarrollado con LabWindos/CVI con licencia para SEGAINVEX-Electrónica.
-https://github.com/PatricioCoronado/BaseSPM_CVI
 
-# MANUAL DE COMANDOS
-https://github.com/PatricioCoronado/Base-AFM-Arduino-DUE/blob/con-libreria-SegaSCPI/ficheros/Manual.pdf
-# 
-![Alt text](https://github.com/PatricioCoronado/Base-AFM-Arduino-DUE/blob/con-libreria-SegaSCPI/ficheros/imagen1.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-AFM-Arduino-DUE/blob/con-libreria-SegaSCPI/ficheros/imagen2.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-AFM-Arduino-DUE/blob/con-libreria-SegaSCPI/ficheros/imagen4.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-AFM-Arduino-DUE/blob/con-libreria-SegaSCPI/ficheros/imagen3.png "Optional title")
+
+# [MANUAL DE COMANDOS](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/Manual.pdf)
+## 
+#IMAGENES DEL PROYECTO
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen1.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen2.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen4.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/master/ficheros/imagen3.png "Optional title")
