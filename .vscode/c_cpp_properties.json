@@ -1,0 +1,77 @@
+{
+    "configurations": [
+        {
+            "name": "!!! WARNING !!! AUTO-GENERATED FILE, PLEASE DO NOT MODIFY IT AND USE https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags"
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/include",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/src",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SparkFun_MMA8452Q_Arduino_Library-master/src",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/Wire/src",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SHT1x-master",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SegaSCPI",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/DueTimer-1.4.6",
+                "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/DHT",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/cores/sam",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/libsam",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/CMSIS/CMSIS/Include",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/CMSIS/Device/ATMEL",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/variants/arduino_due_x",
+                "C:/Users/PC.5014885/.platformio/lib/SerialCommand_ID173",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/HID/src",
+                "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/SPI/src",
+                "C:/Users/PC.5014885/.platformio/packages/tool-unity",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/include",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/src",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SparkFun_MMA8452Q_Arduino_Library-master/src",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/Wire/src",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SHT1x-master",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/SegaSCPI",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/DueTimer-1.4.6",
+                    "C:/Users/PC.5014885/Proyectos/20190335 Programación Arduino Base AFM/Base-AFM-Arduino-DUE V1_2/lib/DHT",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/cores/sam",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/libsam",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/CMSIS/CMSIS/Include",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/system/sam/CMSIS/Device/ATMEL",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/variants/arduino_due_x",
+                    "C:/Users/PC.5014885/.platformio/lib/SerialCommand_ID173",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/HID/src",
+                    "C:/Users/PC.5014885/.platformio/packages/framework-arduinosam/libraries/__cores__/sam/SPI/src",
+                    "C:/Users/PC.5014885/.platformio/packages/tool-unity",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=40303",
+                "__SAM3X8E__",
+                "ARDUINO_ARCH_SAM",
+                "ARDUINO_SAM_DUE",
+                "F_CPU=84000000L",
+                "USBCON",
+                "ARDUINO=10805",
+                "USB_VID=0x2341",
+                "USB_PID=0x003E",
+                "USB_PRODUCT=\"Arduino Due\"",
+                "USB_MANUFACTURER=\"Arduino\"",
+                ""
+            ],
+            "intelliSenseMode": "clang-x64",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "compilerPath": "C:/Users/PC.5014885/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc.exe",
+            "compilerArgs": [
+                "-mthumb",
+                "-mcpu=cortex-m3",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
