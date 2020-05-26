@@ -11,6 +11,9 @@
 	1-	Esta versión no contempla la programación del mando
 		infrarojo.
 	2- He programado el acelerómetro	
+	3- He programado  acelerómetro	y fotodiodo enviando datos
+		cada 150ms
+
 	25/05/2020
 */
 /**************************************************************************
