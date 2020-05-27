@@ -1,11 +1,11 @@
 /*
 	UNIVERSIDAD AUTONÓMA DE MADRID
 	SEGAINVEX: Electrónica
-	OT: 2019022 
+	OT: 20190335 
 	Proyecto: Base SPM con Arduino DUE (Programación)
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
-	25/05/2020
+	26/05/2020
 */
 #include <Arduino.h>
 #include "Muestras.h" //Array para guardar muestras del ADC
@@ -177,6 +177,11 @@ void pc_anda_numero_de_pasos(void);
 void pc_version(void);// Envía al PC la versión del software
 void pc_reset(void);//Pone la base en el estado inicial
 void pc_variables(void);//Devuelve al PC las variables de estado
+void pc_acelerometro(void);
+void pc_inicia_fotodiodo(void);
+void pc_fin_fotodiodo(void);
+void pc_inicia_acelerometro(void);
+void pc_fin_acelerometro(void);
 //Funciones scpi comunes a todos los sistemas
 void errorSCPI(void);
 void opcSCPI(void);
@@ -184,11 +189,7 @@ void idnSCPI(void);
 void clsSCPI(void);
 //Funciones que no hacen nada, implementadas por compatibilidad.
 void pc_final_de_carrera(void);
-void pc_acelerometro(void);
-void pc_inicia_fotodiodo(void);
-void pc_fin_fotodiodo(void);
-void pc_inicia_acelerometro(void);
-void pc_fin_acelerometro(void);
+
 /**********************************************************************
 		Funciones que responden al mando bluethoot
 **********************************************************************/
@@ -280,11 +281,11 @@ tipoNivel BLUETOOTH[] = //BTH  Array de estructuras tipo Nivel
 };
 tipoNivel MOTORES[] = //Comandos del PC que hacen funcionar el sistema
 {
-	SCPI_COMANDO(FOTODIODO,FOT,pc_fotodiodo)//
-	SCPI_COMANDO(TH,TH,pc_sensor_temperatura_humedad)//
+	SCPI_COMANDO(FOTODIODO,FOT,pc_fotodiodo)//La base envía las señales del fotodiodo
+	SCPI_COMANDO(TH,TH,pc_sensor_temperatura_humedad)//La base envía la temperatura y humedad
 	SCPI_COMANDO(MARCHAMOTOR,MM,pc_marcha_motor)//Programa un motor con resolución, frecuencia, sentido y pasos y lo pone en marcha
-	SCPI_COMANDO(MARCHAPARO,MP, pc_marcha_paro)//
-	SCPI_COMANDO(FRECUENCIA,FR,pc_frecuencia)//
+	SCPI_COMANDO(MARCHAPARO,MP, pc_marcha_paro)//Pone en marcha el motor seleccionado
+	SCPI_COMANDO(FRECUENCIA,FR,pc_frecuencia)//Actualiza el valor de frecuencia de paso (micropaso)
 	SCPI_COMANDO(ANPASOS,AN,pc_anda_numero_de_pasos)// Programa un número de pasos a dar "Pasos" y se decremente cada paso 
 	SCPI_COMANDO(MOTORACTIVO,MA,pc_motor_activo)//Cambia el motor seleccionado
 	SCPI_COMANDO(RESOLUCION,RE,pc_resolucion)//Cambia la resolución

@@ -1,20 +1,26 @@
 /*
 	UNIVERSIDAD AUTONÓMA DE MADRID
 	SEGAINVEX: Electrónica
-	OT: 2019022 
+	OT: 20190335 
 	Proyecto: Programación de la Base SPM con Arduino DUE 
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
-	Revisión Abril 2020
+	Revisión Abril-mayo 2020
 	Versión 1.2
-	NOTAS
+	NOTAS 
+	mejoras en esta versión:
 	1-	Esta versión no contempla la programación del mando
 		infrarojo.
 	2- He programado el acelerómetro	
 	3- He programado  acelerómetro	y fotodiodo enviando datos
 		cada 150ms
+	4- En las partes críticas se ha sustituido digitalWrite
+		por una macro que cambia los pines 8 veces más rápido
+	5- La frecuencia de paso (micropaso) ha subido de 90KHz
+		a 120KHz y hay margen para subirla.
 
-	25/05/2020
+
+	25/05/2026
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
