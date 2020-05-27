@@ -24,7 +24,7 @@ Para el sensor de humedad y temperatura SHT11 (obsoleto)
 
 Para utilizar un acelerómetro MMA8452Q para nivelar la cabeza.
 
-# [SOFTWARE PARA TEST](https://github.com/PatricioCoronado/BaseSPM_CVI)
+# [SOFTWARE DE pc](https://github.com/PatricioCoronado/BaseSPM_CVI)
 Desarrollado con LabWindos/CVI con licencia para SEGAINVEX-Electrónica.
 
 
