@@ -471,5 +471,8 @@ int Periodo[]={1000, 1000, 500, 333, 250, 200, 167, 143, 125, 111, 100, 91, 83,
 	digitalWrite(RELE_X,LOW);\
 	digitalWrite(RELE_Y,LOW);\
 	digitalWrite(RELE_HD,LOW);}
+//Interrupción del CLK del DSP activación desactivación
+#define DSP_CLK_ON  attachInterrupt(digitalPinToInterrupt(DSP_CLK),clk_externo,FALLING);
+#define DSP_CLK_OFF detachInterrupt(digitalPinToInterrupt(DSP_CLK));	
 /************************************************************************
 ************************************************************************/

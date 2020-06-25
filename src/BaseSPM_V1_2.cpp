@@ -128,8 +128,8 @@ void setup()
 		// Salida 48V
 		pinMode(SALIDA_48V,INPUT); //Entrada analógica para el ADC
 		//DSP-Dulcinea
-		pinMode(DSP_CLK,INPUT_PULLUP);
-		pinMode(DSP_48V,INPUT_PULLUP);
+		pinMode(DSP_CLK,INPUT);//INPUT_PULLUP da problemas (ver cuaderno Patricio 9 pg 4)
+		pinMode(DSP_48V,INPUT);
 	}//Fin configuración de piner-------------------------------------------------
 	//Inicializa al estado por defecto de las  variables del sistema--------------
 	{
@@ -155,25 +155,24 @@ void setup()
 		Serial.begin(115200); //Programing port
 		//Serial1.begin(57600); //Comunicación con Dulcinea
 		Serial1.begin(115200); //Comunicación con Dulcinea
-		Serial2.begin(9600);  //Comunicación con Android
+		Serial2.begin(115200);  //Comunicación con Android
 	}// Fin puertos serie Serial Serial1 y Serial2 ---------------------------
 	// I2C y acelerómetro-----------------------------------------------------
 	{
 		Wire.begin();
-  		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 1MHz 
+  		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
   		if (Acelerometro.begin() == false){ AcelerometroConectado=NO;}
 		else{AcelerometroConectado=SI;}
 	}
 	// Convertidor AD, Timers e interrupciones externas ----------------------
 	{
-		attachInterrupt(digitalPinToInterrupt(DSP_CLK),clk_externo,FALLING);//Interrupción para el DSP_CLK
-		analogReadResolution(12);//Resolución de los ADCs 12 bitsanalogReadResolution(12);
-		//REG_ADC_MR = (REG_ADC_MR & 0xFFF0F0FF) | 0x00020100;//Aumenta la velocidad del ADC
+		// La interrupción del CLK_DSP se habilita solo si Frecuencia==0 en la función
+		// Que cambia la frecuencia
+		//Aumentaba la velocidad del ADC (ya no, Arduino lo cambió)
+		// REG_ADC_MR = (REG_ADC_MR & 0xFFF0F0FF) | 0x00020100;
 		TIMER_CLK.attachInterrupt(timer_clk);//Timer para clk
 		TIMER_ADC.attachInterrupt(timer_ADC);
 		TIMER_FOTO_ACEL.attachInterrupt(timer_foto_acel);
-
-		//TIMER3_CLK.start(6);
 		TIMER_ADC.start(500/*microsegundos*/); //Periodo de muestreo ADC
 	}// Fin convertidor AD, Timers e interrupciones externas -----------------
 }
@@ -308,7 +307,7 @@ void timer_clk()
  ************************************************************************/
 void clk_externo(void)
 {
-	if(Frecuencia ==0)//Si no es cero sale
+	if(Frecuencia==0)//Si no es cero sale
 	{	//Da un pulso rising-falling en el pin CLK
 		//Flanco de subida
 		CLK_1 // set pin = digitalWrite(CLK,HIGH); pero más rápido
@@ -619,8 +618,10 @@ int cambia_frecuencia_resolucion(unsigned int Frec,unsigned int Res)
 	if(Frecuencia==0)	
 	{
 		TIMER_CLK.stop();//Inhabilita interrupción del pin TIMER_CLK
+		DSP_CLK_ON //Como la frecuencia es 0 el CLK lo controla del DSP
 		return 1;
 	}
+	else DSP_CLK_OFF //Si la frecuencia no es 0 el CLK lo controla el TIMER_CLK
 	//Si había un motor en marcha arranca el timer del clk 
 	if(EstadoMarchaParo==MARCHA)
 	{
@@ -1123,7 +1124,7 @@ void pc_final_de_carrera(void){return;}
 ************************************************************************/
 void  bluetooth_estado(void)
 {
-	char respuesta[64];//Si pongo la cadena más corta no cabe todo
+	char respuesta[256];//Si pongo la cadena más corta no cabe todo
 	float fl,fn,sum;
 	unsigned int fuerzaNormal,fuerzaLateral,suma,emp;
 	//calcula las señales con ajuste de offset y ganancia 
@@ -1135,7 +1136,6 @@ void  bluetooth_estado(void)
 	sum=-0.0064*suma+12.948;
 	if(EstadoMarchaParo) emp=10;
 	else emp=5;
-	//sprintf	(valores,"EST %f %f %f %u %u",fn,fl,sum,emp,Contador);
 	sprintf	(respuesta,"EST %f %f %f %u %u",fn,fl,sum,emp,Pasos);
 	Println(respuesta);
 }
