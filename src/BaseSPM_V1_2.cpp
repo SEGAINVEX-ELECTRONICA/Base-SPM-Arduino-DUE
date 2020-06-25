@@ -8,6 +8,12 @@
 	Revisión Abril-mayo 2020
 	Versión 1.2
 	NOTAS 
+	¡¡MUY IMPORTANTE!!
+	Antes de flasear asegurarse de que los puertos se inicializan
+	con los baudios correctos. El primer prototipo tiene el 
+	Bluetooth a 9600 baudios. El resto a 115200 con el nº
+	de orden en el nombre del Bluetooth BASE_SPM_XXXXXXXX 
+
 	mejoras en esta versión:
 	1-	Esta versión no contempla la programación del mando
 		infrarojo.
@@ -153,8 +159,9 @@ void setup()
 	//Puertos serie Serial Serial1 y Serial2 ---------------------------------
 	{
 		Serial.begin(115200); //Programing port
-		//Serial1.begin(57600); //Comunicación con Dulcinea
-		Serial1.begin(115200); //Comunicación con Dulcinea
+		Serial1.begin(57600); //Comunicación con Dulcinea
+		//Serial1.begin(115200); //Comunicación con Dulcinea
+		//Serial2.begin(9600);  //Comunicación con Android primer prototipo "linvor" va a 9600 baudios
 		Serial2.begin(115200);  //Comunicación con Android
 	}// Fin puertos serie Serial Serial1 y Serial2 ---------------------------
 	// I2C y acelerómetro-----------------------------------------------------
