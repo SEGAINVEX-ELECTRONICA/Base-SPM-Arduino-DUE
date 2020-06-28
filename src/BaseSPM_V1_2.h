@@ -144,8 +144,8 @@
 #define FRECUENCIA_3 15 //KHz
 #define FRECUENCIA_4 30 //KHz
 #define FRECUENCIA_5 63 //KHz
-#define PASOS_MAXIMOS 400000 //Máximo número de pasos que se pueden programar
-//#define PASOS_MAXIMOS 1000000 //Máximo número de pasos que se pueden programar
+#define PASOS_MAXIMOS 600000 //Máximo número de pasos que se pueden programar
+//#define PASOS_MAXIMOS 500000 //Máximo número de pasos que se pueden programar
 #define CONTADOR_MAXIMO 800000
 /************************************************************************
 				VARIOS
@@ -163,6 +163,7 @@
 /**********************************************************************
 				Funciones que responden al PC
 **********************************************************************/
+void pc_marcha_motor_pasos(void);
 void pc_fotodiodo(void);
 void pc_sensor_temperatura_humedad(void);
 void pc_sentido(void);
@@ -283,7 +284,8 @@ tipoNivel MOTORES[] = //Comandos del PC que hacen funcionar el sistema
 {
 	SCPI_COMANDO(FOTODIODO,FOT,pc_fotodiodo)//La base envía las señales del fotodiodo
 	SCPI_COMANDO(TH,TH,pc_sensor_temperatura_humedad)//La base envía la temperatura y humedad
-	SCPI_COMANDO(MARCHAMOTOR,MM,pc_marcha_motor)//Programa un motor con resolución, frecuencia, sentido y pasos y lo pone en marcha
+	SCPI_COMANDO(MARCHAMOTORPASOS,MMP,pc_marcha_motor_pasos)//Programa un motor con resolución, frecuencia, sentido y pasos y lo pone en marcha
+	SCPI_COMANDO(MARCHAMOTOR,MM,pc_marcha_motor)//Programa un motor con resolución, frecuencia, sentido y lo pone en marcha
 	SCPI_COMANDO(MARCHAPARO,MP, pc_marcha_paro)//Pone en marcha el motor seleccionado
 	SCPI_COMANDO(FRECUENCIA,FR,pc_frecuencia)//Actualiza el valor de frecuencia de paso (micropaso)
 	SCPI_COMANDO(ANPASOS,AN,pc_anda_numero_de_pasos)// Programa un número de pasos a dar "Pasos" y se decremente cada paso 

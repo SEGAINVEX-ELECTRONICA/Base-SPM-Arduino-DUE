@@ -318,7 +318,7 @@ void clk_externo(void)
 	{	//Da un pulso rising-falling en el pin CLK
 		//Flanco de subida
 		CLK_1 // set pin = digitalWrite(CLK,HIGH); pero más rápido
-		Contador++;//Contamos de pasos ascendente
+		Contador++;//Contamos los pasos
 		//Flanco de bajada
 		delayMicroseconds(1);//Garantizo 1 microsegundo
 		CLK_0 //Reset pin = digitalWrite(CLK,LOW); pero más rápido
@@ -653,7 +653,10 @@ int cambia_frecuencia_resolucion(unsigned int Frec,unsigned int Res)
 *************************************************************************/
 void programa_pasos(int pasos)
 {
-	if(Pasos >=0 && Pasos <=PASOS_MAXIMOS)	Pasos=pasos;
+	if(Pasos >=0 && Pasos <=PASOS_MAXIMOS)	
+	{
+		Pasos=pasos;
+	}
 	else BaseScpi.errorscpi(15);
 }
 /**************************************************************************
@@ -684,6 +687,55 @@ int cambia_sentido(unsigned int Sen)
 /************************************************************************
 		FUNCIONES SCPI QUE RESPONDEN A COMANDOS DEL PC
 ************************************************************************/
+void pc_marcha_motor_pasos(void)
+{
+	unsigned int numParametros = 5;//Parametros esperados
+	unsigned int np; // numero de parametros leido por sscanf
+	//MotorActivo,Frecuencia,Sentido,Pasos
+	unsigned int MotorActivo_,Resolucion_,Frecuencia_,Sentido_,Pasos_;
+	char respuesta[128];
+	
+	// Si solo pregunta por los datos, se responde y sale
+	if(BaseScpi.FinComando[0]=='?')	
+	{
+		sprintf(respuesta,"%u %u %u %u %u",MotorActivo,Resolucion,Frecuencia,Sentido,Pasos);//Envía las variables globales del sistema
+		Println(respuesta);
+		 return;
+	}
+   		// Si el primer caracter de FinComado es 'espacio' lee parametros
+  		if(BaseScpi.FinComando[0]==' ')  
+	{   // Lee la cadena de parametros
+	 	np = sscanf(BaseScpi.FinComando,"%u %u %u %u %u",&MotorActivo_,&Resolucion_,&Frecuencia_,&Sentido_,&Pasos_);
+		if(np != numParametros){BaseScpi.errorscpi(6);return;}// Si no lee lo parametros esperados Error!
+	} 	
+	else {BaseScpi.errorscpi(5);return;} // Si el comando no empieza por 'espacio' Error!Parametro inexistente.
+	// Si el número de parámetros leidos es correcto Procesa los datos recibidos
+	// Primero tengo que comprobar que todo esta en rango. Si no lo esta, sale con error.
+	//1 Motor
+	if (MotorActivo_ < MIN_MOTOR || MotorActivo_ > MAX_MOTOR )
+	{BaseScpi.errorscpi(9);return;}// sale con error:motor incorrecto
+	//2 Resolución
+	if(Resolucion_!=256 && Resolucion_!=512 && Resolucion_!=1024 && Resolucion_!=2048 )
+		{BaseScpi.errorscpi(17);return;}//Resolución incorrecta
+	//2 Frecuencia
+	//La máxima frecuencia con mando es 64KHz (64000Hz/256 = 250Hz) 256=resolucion_mando
+	if (!((Frecuencia_ <= MAXIMA_FRECUENCIA && Frecuencia_ >=  MINIMA_FRECUENCIA))) 
+		{BaseScpi.errorscpi(12);return;}
+	//4  Sentido
+	if (!(Sentido_ == 0 || Sentido_ == 1) ){BaseScpi.errorscpi(13);return;}// error:parametro sentido incorrecto
+	//Número de pasos a dar
+	if (!(Pasos_ >= 0 && Pasos_ <=PASOS_MAXIMOS) ){BaseScpi.errorscpi(15);return;}// error:número de pasos incorrectos
+	//
+	// Si todos los parametros estan en rango...
+	// Si frecuencia y resolución son compatibles actualiza todos los parámetros
+	if (cambia_frecuencia_resolucion(Frecuencia_,Resolucion_))
+	{
+		cambia_motor(MotorActivo_); // Cambia motor
+		cambia_sentido(Sentido_); // Cambia el sentido
+		programa_pasos(Pasos_);//Programa el número de pasos
+		marcha_paro_motor(MARCHA); // Al final pone el motor en marcha
+	}
+}
 /**************************************************************************
   Función que responde al comando del pc para programar: un motor, 
   frecuencia, resolución, sentido y ponerlo en marcha.
