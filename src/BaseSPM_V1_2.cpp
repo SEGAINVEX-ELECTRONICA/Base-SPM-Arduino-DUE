@@ -167,9 +167,8 @@ void setup()
 	// I2C y acelerómetro-----------------------------------------------------
 	{
 		Wire.begin();
-  		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
-  		if (Acelerometro.begin() == false){ AcelerometroConectado=NO;}
-		else{AcelerometroConectado=SI;}
+		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
+  		AcelerometroConectado = busca_acelerometro();//Si hay acelerómetro pone AcelerometroConectado a true
 	}
 	// Convertidor AD, Timers e interrupciones externas ----------------------
 	{
@@ -270,17 +269,26 @@ void timer_foto_acel()
 	}
 	else //ACELEROMETRO
 	{
-		TEST_ACELEROMETRO_1
-		if (Acelerometro.available()) 
-		{      // Wait for new data from accelerometer
-			float EjeX=Acelerometro.getCalculatedX(); 
-			float EjeY=Acelerometro.getCalculatedY();
-			float EjeZ=Acelerometro.getCalculatedZ();
-			sprintf(respuesta,"AC %.4f %.4f %.4f",EjeX,EjeY,EjeZ);
-			Println(respuesta);
+		if(AcelerometroConectado)
+		{
+			TEST_ACELEROMETRO_1
+			if (Acelerometro.available()) 
+			{      // Wait for new data from accelerometer
+				float EjeX=Acelerometro.getCalculatedX(); 
+				float EjeY=Acelerometro.getCalculatedY();
+				//float EjeZ=Acelerometro.getCalculatedZ();
+				//sprintf(respuesta,"AC %.4f %.4f %.4f",EjeX,EjeY,EjeZ);
+				sprintf(respuesta,"AC %.4f %.4f",EjeX,EjeY);
+				Println(respuesta);
+			}
+			TEST_ACELEROMETRO_0
 		}
-		TEST_ACELEROMETRO_0
-	}//else
+		else //Si no hay acelerómetro da error y detiene el timer
+		{
+			BaseScpi.errorscpi(23);
+			TIMER_FOTO_ACEL.stop();
+		}
+	}//else //ACELEROMETRO
 }
 /************************************************************************
      INTERRUPCION DEL TIMER 5  para clk del step del módulo  TMCM-090
@@ -680,6 +688,18 @@ int cambia_sentido(unsigned int Sen)
 	}
 	return Sentido;
 }
+/**************************************************************************
+*	busca el acelerómetro en las 2 direcciones 0x1c y 0x1d
+	un par de veces en cada dirección
+*************************************************************************/
+bool busca_acelerometro(void)
+{
+	if (Acelerometro.begin(Wire, 0x1c) == true) return true;
+	if (Acelerometro.begin(Wire, 0x1c) == true) return true;
+	if (Acelerometro.begin(Wire, 0x1d) == true) return true;
+	if (Acelerometro.begin(Wire, 0x1d) == true) return true;
+	return false;
+}
 /************************************************************************
         Fin del conjunto de funciones que tocan y/o programan las 
 		variable y los pines del sistema.
@@ -994,6 +1014,7 @@ void pc_onda(void)
  * Funciones para hacer que envíe las señales del diodo cada 
  * 100ms y para que deje de hacerlo.
  * Comandos MOT:IFO inicia y MOT:FFO finaliza
+ * la función de interrupci´pn del timer es timer_foto_acel()
  * **********************************************************************/
 void pc_inicia_fotodiodo(void)
 {
@@ -1123,7 +1144,7 @@ void pc_acelerometro(void)
 		EjeY=Acelerometro.getCalculatedY();
 		//EjeZ=Acelerometro.getCalculatedZ();
 		//sprintf(respuesta,"AC %.2f %.2f %.2f",EjeX,EjeY,EjeZ);
-		sprintf(respuesta,"AC %f %f",EjeX,EjeY);
+		sprintf(respuesta,"AC %4f %4f",EjeX,EjeY);
 		Println(respuesta);
 	}
 	else 

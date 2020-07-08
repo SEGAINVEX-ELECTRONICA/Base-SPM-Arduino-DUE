@@ -13,7 +13,7 @@
 		Definición de pines
 *******************************************************************/
 #define LM500_SHDWN 58 //Activa la fuente de 48V
-#define P15V_ON 71 //Activa la fuente de 48V
+#define P15V_ON 12 //Activa la fuente de 48V //Modificado
 //	Definición de pines
 //Driver de piezomotores TCMC90
 #define RES0  33 
@@ -213,6 +213,7 @@ void parar_clk_step(void);//Función auxiliar de marcha_paro_motor()
 void activa_48V(void);//Función fs1: Activa la fuente de 48V
 void desactiva_48V(void);// Desactiva la fuente de 48V
 void programa_pasos(int);//Programa el número de pasos
+bool busca_acelerometro(void);//Busca el acelerómetro
 /**********************************************************************
 					Funciones para test
 **********************************************************************/
@@ -407,7 +408,7 @@ String ErroresBaseSPM[]=
 ************************************************************************/
 //Acelerómetro MMA8452
 MMA8452Q Acelerometro;
-bool AcelerometroConectado=NO;
+bool AcelerometroConectado=false;
 bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetro
 #define ACELEROMETRO 1
 #define FOTODIODO 0
