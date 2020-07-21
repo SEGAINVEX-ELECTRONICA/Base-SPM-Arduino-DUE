@@ -27,6 +27,7 @@
 
 
 	25/05/2026
+	Editado el 17/07/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
@@ -62,24 +63,12 @@
 		a 200KHz comunicando sin mucho impacto en la comunicación con el PC.
 		De todas formas se va a quedar a 90 o 100 KHz.
 */
-
-/***********************************************************************
-	Sensor de humedad y temperatura a utilizar. Comentar el que no sea
-	o los 2 si no se usa ninguno
-************************************************************************/
-//#define SENSOR_SHT11
-#define SENSOR_DHT22
 /**********************************************************************/
 #include <Arduino.h>
 #include "DueTimer.h"//Necesario para usar los timers con facilidad
-#include <Wire.h>   //Para utilizar el I2C del acelerómetro
-#include "SHT1x.h" //Sensor de humedad temperatura
-#ifdef SENSOR_SHT11
-	#include "SHT1x.h" //Sensor de humedad temperatura SHT11
-#endif
-#ifdef SENSOR_DHT22
-	#include "DHT.h"//Sensor de humedad temperatura DHT22
-#endif
+#include <Wire.h>   //Para utilizar el I2C del acelerómetro y otros dipositivos
+#include "SHT1x.h" //Sensor de humedad temperatura SHT11
+#include "DHT.h"//Sensor de humedad temperatura DHT22
 #include "SparkFun_MMA8452Q.h"//acelerómetro MMA8452Q
 #include "SegaSCPI.h"
 #include "BaseSPM_V1_2.h"//Constantes, tipos, prototipos y variables globales
@@ -88,8 +77,7 @@
  ***********************************************************************/
 void setup()
 {
-	//Configuración de pines------------------------------------------------------
-	{
+	{//Configuración de pines--------------------------------------------------
 		//Driver piezomotores 
 		pinMode(LM500_SHDWN,OUTPUT);     
 		pinMode(P15V_ON,OUTPUT);     
@@ -137,8 +125,7 @@ void setup()
 		pinMode(DSP_CLK,INPUT);//INPUT_PULLUP da problemas (ver cuaderno Patricio 9 pg 4)
 		pinMode(DSP_48V,INPUT);
 	}//Fin configuración de piner-------------------------------------------------
-	//Inicializa al estado por defecto de las  variables del sistema--------------
-	{
+	{//Inicializa al estado por defecto de las  variables del sistema----------
 		parar_clk_step();//Para motor 
 		// DC-DC de 48V
 		Estado_48V=true; desactiva_48V();//Desactiva el DC-DC de 48V
@@ -156,22 +143,30 @@ void setup()
 		//puede modificar con un comado SCPI
 		//Interrupción del pin DSP_CLK clk externo proporcinado por el DSP
 	}//Fin inicializa al estado por defecto de las  variables del sistema-----
-	//Puertos serie Serial Serial1 y Serial2 ---------------------------------
-	{
+	{//Puertos serie Serial Serial1 y Serial2 ---------------------------------
 		Serial.begin(115200); //Programing port
 		Serial1.begin(57600); //Comunicación con Dulcinea
 		//Serial1.begin(115200); //Comunicación con Dulcinea
 		//Serial2.begin(9600);  //Comunicación con Android primer prototipo "linvor" va a 9600 baudios
 		Serial2.begin(115200);  //Comunicación con Android
 	}// Fin puertos serie Serial Serial1 y Serial2 ---------------------------
-	// I2C y acelerómetro-----------------------------------------------------
-	{
+	{ // I2C, acelerómetro y sensor de temperatura AHT10-----------------------
+		//Se utiliza un i2c para el acelerómetro y otro para el AHT10 porque son incompatibles
 		Wire.begin();
 		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
+		Wire1.begin();
+		Wire1.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
+		#define I2C_ACC Wire //i2c del acelerómetro scl y sda
+		#ifdef SENSOR_AHT10
+			#define I2C_AHT10 Wire1 //i2c sensor temperatura humedad AHT10 scl1 y sda1 
+			aht10Conectado = busca_aht10(); 
+		#endif
+		
+		//I2C.setClock(NORMAL_FREC_I2C);//Velocidad del I2C 0.1MHz 
   		AcelerometroConectado = busca_acelerometro();//Si hay acelerómetro pone AcelerometroConectado a true
+		
 	}
-	// Convertidor AD, Timers e interrupciones externas ----------------------
-	{
+	{// Convertidor AD, Timers e interrupciones externas ----------------------
 		// La interrupción del CLK_DSP se habilita solo si Frecuencia==0 en la función
 		// Que cambia la frecuencia
 		//Aumentaba la velocidad del ADC (ya no, Arduino lo cambió)
@@ -212,9 +207,11 @@ void loop()
 	}// Escucha Serial2 del mando Bluetooth-Android
 	if (Serial2.available())
 	{
+		//digitalWrite(LED_BUILTIN,HIGH);  // TODO Quitar linea
 		LED0_1 //digitalWrite(LED0,HIGH);
 		BaseScpi.scpi(&Serial2);	
 		LED0_0 //digitalWrite(LED0,LOW);
+		//digitalWrite(LED_BUILTIN,LOW);  // TODO Quitar linea 
 	}//SCPI_SERIAL2 //Escucha al mando
 	// Escucha el serial programing port
 	if (Serial.available())
@@ -626,17 +623,17 @@ int cambia_frecuencia_resolucion(unsigned int Frec,unsigned int Res)
 	//Si la frecuencia es cero hay que inhabilitar Timer3_CLK
 	//y la interrupción del pin DSP_CLK está siempre habilitada
 	//pero si la frecuencia no es cero sale de la función de interrupción
-	/*
-	TO DO
-	Ver si es mejor habilitar e inhabilitar la interrupción del pin DSP_CLK
-	*/
 	if(Frecuencia==0)	
 	{
 		TIMER_CLK.stop();//Inhabilita interrupción del pin TIMER_CLK
-		DSP_CLK_ON //Como la frecuencia es 0 el CLK lo controla del DSP
+		//Como la frecuencia es 0 el CLK lo controla del DSP
+		attachInterrupt(digitalPinToInterrupt(DSP_CLK),clk_externo,FALLING);
 		return 1;
 	}
-	else DSP_CLK_OFF //Si la frecuencia no es 0 el CLK lo controla el TIMER_CLK
+	else  
+	{//Si la frecuencia no es 0 el CLK lo controla el TIMER_CLK
+		detachInterrupt(digitalPinToInterrupt(DSP_CLK));	
+	}
 	//Si había un motor en marcha arranca el timer del clk 
 	if(EstadoMarchaParo==MARCHA)
 	{
@@ -694,11 +691,28 @@ int cambia_sentido(unsigned int Sen)
 *************************************************************************/
 bool busca_acelerometro(void)
 {
-	if (Acelerometro.begin(Wire, 0x1c) == true) return true;
-	if (Acelerometro.begin(Wire, 0x1c) == true) return true;
-	if (Acelerometro.begin(Wire, 0x1d) == true) return true;
-	if (Acelerometro.begin(Wire, 0x1d) == true) return true;
+	if (Acelerometro.begin(I2C_ACC, 0x1c) == true) return true;
+	if (Acelerometro.begin(I2C_ACC, 0x1c) == true) return true;
+	if (Acelerometro.begin(I2C_ACC, 0x1d) == true) return true;
+	if (Acelerometro.begin(I2C_ACC, 0x1d) == true) return true;
 	return false;
+}
+/**************************************************************************
+*	busca e inicializa el sensor AHT10 en el I2C
+*************************************************************************/
+bool busca_aht10(void)
+{
+	I2C_AHT10.beginTransmission(AHT10_ADD);
+    uint8_t comandoCalibracion[3]={0xE1, 0x08, 0x00};
+	I2C_AHT10.write(comandoCalibracion, 3);
+    I2C_AHT10.endTransmission();
+	delay(500);
+ 	I2C_AHT10.requestFrom(AHT10_ADD, 1);
+    int8_t resultado = I2C_AHT10.read();
+    if((resultado & 0x68) == 0x08)
+    	return true;
+	else
+		 return false;
 }
 /************************************************************************
         Fin del conjunto de funciones que tocan y/o programan las 
@@ -1086,7 +1100,7 @@ void pc_sensor_temperatura_humedad(void)
 	TIMER_ADC.stop();//Este comando desactiva las interrupciones
 	LED3_1 //digitalWrite(LED3,HIGH);//Para test
 #ifdef SENSOR_SHT11
-	char Datos[64];
+	char Datos[128];
 	//SHT1x SHT11(SEN_DATA, SEN_CLK);
 	float Temperatura;
 	float Humedad;
@@ -1097,7 +1111,7 @@ void pc_sensor_temperatura_humedad(void)
 	Println(Datos)
 #endif
 #ifdef SENSOR_DHT22
-	char Datos[64];	
+	char Datos[128];	
 	//DHT dht(SEN_DATA, DHT22);
 	float Humedad = dht.readHumidity();
   	//delay(100);// TO DO intentar bajar 
@@ -1110,6 +1124,34 @@ void pc_sensor_temperatura_humedad(void)
 	}
 	Println(Datos);
 #endif
+#ifdef SENSOR_AHT10
+	if(aht10Conectado)
+	{
+		char Datos[128];
+		uint8_t rawData[6] = {0xFF, 0, 0, 0, 0, 0};// 0xFF es error
+		//Leee humedad y temperatura
+		I2C_AHT10.beginTransmission(AHT10_ADD);
+		uint8_t comando[3]={0xAC, 0x33, 0x00};
+		I2C_AHT10.write(comando,3); //Secuencia de comandos para leer la medida
+		if (I2C_AHT10.endTransmission(true) != 0){BaseScpi.errorscpi(25);return;}//Si falla la transmisión hay error
+		// lee 6 bytes del sensor
+		I2C_AHT10.requestFrom(AHT10_ADD, 6, true);//Solicita datos al dispositivo
+		if (I2C_AHT10.available() != 6){BaseScpi.errorscpi(25);}//Si no hay 6 datos sale con error
+		for (uint8_t i = 0; i < 6 ; i++){rawData[i] = I2C_AHT10.read();}//Lee en el array de datos
+		//Calcula la temperatura
+		uint32_t temp = ((uint32_t)(rawData[3] & 0x0F) << 16) | ((uint16_t) rawData[4] << 8) | rawData[5];
+		float Temperatura = (float)temp * 0.000191 - 50;
+		//Calcula la humedad
+		uint32_t humi = (((uint32_t) rawData[1] << 16) | ((uint16_t)rawData[2] << 8) | (rawData[3])) >> 4; //20-bit raw humidity data
+		float Humedad = (float)humi * 0.000095;
+		if (Humedad < 0.0)   Humedad= 0.0;
+		if (Humedad > 100.0) Humedad = 100.0;
+		//Envía los datos por el puerto
+		sprintf(Datos,"T%5.1f H%5.1f",Temperatura,Humedad);
+		Println(Datos);
+	}
+	else BaseScpi.errorscpi(24);//Error no hay sensor conectado
+ #endif
 	LED3_0//digitalWrite(LED3,LOW);
 	TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);
 	TIMER_ADC.start();
@@ -1292,7 +1334,7 @@ void bluetooth_para_motor(void)
 	Esto hay que cambiarlo porque en el futuro puede dar problemas
 	mejor que devuelva "SP" o algo así
 	*/
-	Println("1");
+	Println("ST");
 }
 /************************************************************************
 		FIN DE FUNCIONES QUE RESPONDEN A COMANDOS DEL BLUETOOTH
@@ -1377,7 +1419,10 @@ void errorSCPI(void){BaseScpi.errorscpi(0);}
    Envia por el puerto una cadena que identifica al sistema
    Se ejecuta en 1ms
  *************************************************************************/
-void idnSCPI(void){BaseScpi.enviarNombreDelSistema();}
+void idnSCPI(void)
+{
+	BaseScpi.enviarNombreDelSistema();
+}
  /************************************************************************
   Función del Comando:*OPC
   Envia por el puerto el carácter uno

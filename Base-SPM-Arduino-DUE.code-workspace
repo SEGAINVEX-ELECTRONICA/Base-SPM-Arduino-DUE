@@ -5,6 +5,14 @@
 		},
 		{
 			"path": "..\\Base-AFM-Arduino-DUE-V1_1_Diego"
+		},
+		{
+			"name": "aht10",
+			"path": "..\\..\\aht10"
+		},
+		{
+			"name": "MMA8451",
+			"path": "..\\..\\MMA8451"
 		}
 	],
 	"settings": {

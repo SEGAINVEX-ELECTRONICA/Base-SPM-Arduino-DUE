@@ -6,6 +6,7 @@
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
 	26/05/2020
+	Editado el 17/07/2020
 */
 #include <Arduino.h>
 #include "Muestras.h" //Array para guardar muestras del ADC
@@ -148,12 +149,15 @@
 //#define PASOS_MAXIMOS 500000 //Máximo número de pasos que se pueden programar
 #define CONTADOR_MAXIMO 800000
 /************************************************************************
+				CONFIGURACION I2C
+************************************************************************/
+#define MAX_FREC_I2C 400000 //Frecuencia I2C máxima
+#define NORMAL_FREC_I2C 100000 //Frecuencia I2C standar
+/************************************************************************
 				VARIOS
 ************************************************************************/
 #define ENCENDIDO 1
 #define APAGADO 0
-#define MAX_FREC_I2C 400000 //Frecuencia I2C máxima
-#define NORMAL_FREC_I2C 100000 //Frecuencia I2C standar
 //#define ACCEL_HEXADECIMAL 1 //Comentar para enviar los datos como float si no complemento a 2
 #define SI 1
 #define NO 0
@@ -214,6 +218,7 @@ void activa_48V(void);//Función fs1: Activa la fuente de 48V
 void desactiva_48V(void);// Desactiva la fuente de 48V
 void programa_pasos(int);//Programa el número de pasos
 bool busca_acelerometro(void);//Busca el acelerómetro
+bool busca_aht10(void); //Busca el sensor de humedad temperatura AHT10
 /**********************************************************************
 					Funciones para test
 **********************************************************************/
@@ -402,9 +407,11 @@ String ErroresBaseSPM[]=
   "21 Error lectura sensor humedad-temperatura",
   "22 No hay motor seleccionado",
   "23 No hay acelerometro conectado",
+  "24 No hay sensor conectado",
+  "25 Error en el sensor",
 };
 /************************************************************************
-          Variables de estado del sistema	(globales)	
+    Objetos, constantes y variables de estado del sistema	(globales)	
 ************************************************************************/
 //Acelerómetro MMA8452
 MMA8452Q Acelerometro;
@@ -416,7 +423,15 @@ bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetr
 #define T100ms 100000 
 #define T150ms 150000
 #define T50ms   50000
-//Sensor humedad temperatura
+//Sensor humedad temperatura descomentar el que se use 
+//#define SENSOR_SHT11
+//#define SENSOR_DHT22
+#define SENSOR_AHT10
+//
+#ifdef SENSOR_AHT10
+	#define AHT10_ADD 0X38
+	bool aht10Conectado = false;
+#endif
 #ifdef SENSOR_SHT11
 	SHT1x SHT11(SEN_DATA, SEN_CLK);
 #endif
@@ -424,6 +439,7 @@ bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetr
 	DHT dht(SEN_DATA, DHT22);
 #endif
 //Objeto SCPI
+String NombreDelSistema = "Base SPM"; //Puesto para depuración. Se puede quitar.
 SegaSCPI BaseScpi(Raiz,"Base SPM",ErroresBaseSPM);
 //Para no tener que teclear todo al aludir al puerto serie 
  //BaseScpi.PuertoActual->println(); ahora sería puerto->println();;
@@ -431,8 +447,9 @@ SegaSCPI BaseScpi(Raiz,"Base SPM",ErroresBaseSPM);
 //#define Printf BaseScpi.PuertoActual->printf //No soporta Serial.printf
 #define Print BaseScpi.PuertoActual->print
 char Version[]="Base SPM V1.2";//Las distintas "Bases SPM" pueden tener versión
+//Variables para depuración. Activación con "depuracion" y puerto para depuración
 bool depuracion=false; //1 para hacer depuración del software. 0 servicio 
-#define debug Serial1.print //Puerto para depuracion
+#define debug Serial.print //Puerto para depuracion
 //normal. El modo depuración se usa en la fase de desarrollo del software
 //para que el sistema envia al PC cadenas con información relevante
 bool EstadoCLK;// Estado de la linea de CLK
@@ -474,8 +491,5 @@ int Periodo[]={1000, 1000, 500, 333, 250, 200, 167, 143, 125, 111, 100, 91, 83,
 	digitalWrite(RELE_X,LOW);\
 	digitalWrite(RELE_Y,LOW);\
 	digitalWrite(RELE_HD,LOW);}
-//Interrupción del CLK del DSP activación desactivación
-#define DSP_CLK_ON  attachInterrupt(digitalPinToInterrupt(DSP_CLK),clk_externo,FALLING);
-#define DSP_CLK_OFF detachInterrupt(digitalPinToInterrupt(DSP_CLK));	
 /************************************************************************
 ************************************************************************/
