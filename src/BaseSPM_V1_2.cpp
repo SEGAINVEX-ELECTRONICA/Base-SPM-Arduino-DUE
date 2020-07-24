@@ -26,7 +26,7 @@
 		a 120KHz y hay margen para subirla.
 
 
-	25/05/2026
+	25/05/2020
 	Editado el 17/07/2020
 */
 /**************************************************************************
@@ -171,6 +171,7 @@ void setup()
 		// Que cambia la frecuencia
 		//Aumentaba la velocidad del ADC (ya no, Arduino lo cambió)
 		// REG_ADC_MR = (REG_ADC_MR & 0xFFF0F0FF) | 0x00020100;
+		analogReadResolution(12);//Resolución de los ADCs 12 bits
 		TIMER_CLK.attachInterrupt(timer_clk);//Timer para clk
 		TIMER_ADC.attachInterrupt(timer_ADC);
 		TIMER_FOTO_ACEL.attachInterrupt(timer_foto_acel);
@@ -255,11 +256,11 @@ void timer_foto_acel()
 		float fl,fn,sum;
 		unsigned int fuerzaNormal,fuerzaLateral,suma;
 		fuerzaNormal=FuerzaNormal.media();
-		fn=-0.0062*fuerzaNormal+12.625;
+		fn=-mFotoDiodo*fuerzaNormal+bFotoDiodo;
 		fuerzaLateral=FuerzaLateral.media();
-		fl=-0.0064*fuerzaLateral+13.035;
+		fl=-mFotoDiodo*fuerzaLateral+12.26;
 		suma=Suma.media();
-		sum=-0.0064*suma+12.948;
+		sum=-mFotoDiodo*suma+bFotoDiodo;
 		sprintf	(respuesta,"FOT %f %f %f",fn,fl,sum);
 		Println(respuesta);
 		TEST_FOTODIODO_0
@@ -1066,15 +1067,27 @@ void pc_fotodiodo(void)
 		return;
 	}
 	char respuesta[32];
+	
 	float fl,fn,sum;
 	unsigned int fuerzaNormal,fuerzaLateral,suma;
 	fuerzaNormal=FuerzaNormal.media();
-	fn=-0.0062*fuerzaNormal+12.625;
+	fn=mFotoDiodo*fuerzaNormal+bFotoDiodo;
+	//fn=3.3*fuerzaNormal/4096;
 	fuerzaLateral=FuerzaLateral.media();
-	fl=-0.0064*fuerzaLateral+13.035;
+	fl=-mFotoDiodo*fuerzaLateral+bFotoDiodo;
+	//fl=3.3*fuerzaLateral/4096;
 	suma=Suma.media();
-	sum=-0.0064*suma+12.948;
-	sprintf	(respuesta,"FOT %.2f %.2f %.2f",fn,fl,sum);
+	sum=-mFotoDiodo*suma+bFotoDiodo;
+	//sum=3.3*suma/4096;
+
+	//unsigned int FN=analogRead(F_NORMAL);
+	//unsigned int FL=analogRead(F_LATERAL);
+	//unsigned int SUMA=analogRead(SUM);
+	//unsigned int TEST=analogRead(A0);
+
+
+	sprintf(respuesta,"FOT %.2f %.2f %.2f",fn,fl,sum);
+	//sprintf	(respuesta,"FOT %u %u %u %U",FN,FL,SUMA,TEST);
 	Println(respuesta);
 }
 /*************************************************************************
@@ -1251,11 +1264,11 @@ void  bluetooth_estado(void)
 	unsigned int fuerzaNormal,fuerzaLateral,suma,emp;
 	//calcula las señales con ajuste de offset y ganancia 
 	fuerzaNormal=FuerzaNormal.media();
-	fn=-0.0062*fuerzaNormal+12.625;
+	fn=-mFotoDiodo*fuerzaNormal+bFotoDiodo;
 	fuerzaLateral=FuerzaLateral.media();
-	fl=-0.0064*fuerzaLateral+13.035;
+	fl=-mFotoDiodo*fuerzaLateral+bFotoDiodo;
 	suma=Suma.media();
-	sum=-0.0064*suma+12.948;
+	sum=-mFotoDiodo*suma+bFotoDiodo;
 	if(EstadoMarchaParo) emp=10;
 	else emp=5;
 	sprintf	(respuesta,"EST %f %f %f %u %u",fn,fl,sum,emp,Pasos);

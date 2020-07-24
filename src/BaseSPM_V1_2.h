@@ -413,6 +413,10 @@ String ErroresBaseSPM[]=
 /************************************************************************
     Objetos, constantes y variables de estado del sistema	(globales)	
 ************************************************************************/
+//Fotodiodo. Pendiente y término independiente para ajustar la respuesta del ADC 
+// float Vfotod=mFotoDiodo*ADC+bFotodiodo
+float mFotoDiodo =-0.007122;
+float bFotoDiodo = 13.26;
 //Acelerómetro MMA8452
 MMA8452Q Acelerometro;
 bool AcelerometroConectado=false;
