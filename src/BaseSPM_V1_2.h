@@ -415,6 +415,8 @@ String ErroresBaseSPM[]=
 ************************************************************************/
 //Fotodiodo. Pendiente y término independiente para ajustar la respuesta del ADC 
 // float Vfotod=mFotoDiodo*ADC+bFotodiodo
+// Ajuste para una Vref de 3.3V (por defecto) Si se cambia a externa 3V hay que reajustar 
+// los valores de mFotoDiodo y bFotodiodo (ver cuaderno Patricio 9, pg 17 )
 float mFotoDiodo =-0.007122;
 float bFotoDiodo = 13.26;
 //Acelerómetro MMA8452
