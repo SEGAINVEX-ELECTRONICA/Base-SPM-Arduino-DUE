@@ -1,7 +1,7 @@
 /*
 	UNIVERSIDAD AUTONÓMA DE MADRID
 	SEGAINVEX: Electrónica
-	OT: 20190335 
+	OT: 20190335, 20191136 
 	Proyecto: Programación de la Base SPM con Arduino DUE 
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
@@ -14,20 +14,32 @@
 	Bluetooth a 9600 baudios. El resto a 115200 con el nº
 	de orden en el nombre del Bluetooth BASE_SPM_XXXXXXXX 
 
-	mejoras en esta versión:
-	1-	Esta versión no contempla la programación del mando
+	mejoras en versión 1_1:
+	
+	-1.	Esta versión no contempla la programación del mando
 		infrarojo.
-	2- He programado el acelerómetro	
-	3- He programado  acelerómetro	y fotodiodo enviando datos
-		cada 150ms
-	4- En las partes críticas se ha sustituido digitalWrite
+	-2. He programado el acelerómetro	
+	-3. He programado  acelerómetro	y fotodiodo enviando datos
+		cada 200ms
+	-4. En las partes críticas se ha sustituido digitalWrite
 		por una macro que cambia los pines 8 veces más rápido
-	5- La frecuencia de paso (micropaso) ha subido de 90KHz
+	-5. La frecuencia de paso (micropaso) ha subido de 90KHz
 		a 120KHz y hay margen para subirla.
+	-6. Anulo la función del pin del DSP DSP_48V 
+	
+	Ultimas modificaciones (experimental):
+	
+	-1.	He modificado las firmas de las cadenas. Ahora son dos mayúsculas 
+		salvo temperatura-humedad.
+	-2.	El envío periódico de fotodiodo y acelerómetro tiene un parámetro, 
+		el número de envios.
+	-3. El sensor AHT10 se maneja con el i2c Wire1 directamente sin librería.
+	-4. He bajado el periodo de muestreo a 400us (2,5KHz). 
+	-5. Los 48V se activan o desactivan desde el PC o Android (experimental)
 
 
 	25/05/2020
-	Editado el 17/07/2020
+	Editado el 27/07/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
@@ -46,22 +58,8 @@
     along with BaseSPM.c  If not, see <http://www.gnu.org/licenses/>
 ***************************************************************************/	
 /*
-		TO DO
-	-1.	Hay un filtro fir diseñado para las señales del fotodiodo
-		habría que implantarlo en este programa y comprobar tiempos
-		de ejecución y efectividad. Hay que ajustar el filtro antialiasing
-		con la capacidad del polo o con la frecuencia de muestreo
-	-2.	Sería interesante una función que envie las señales del fotodiodo 
-		y/o el acelerómetro con una tasa alta (he comprobado que podría llegar
-		a 35ms)
+		TODO
 	
-	-3. Habría que estudiar los timers para ver si puedo subir la frecuencia de 
-		micropaso por encima de 90KHz: Hecho. El problema es que la función
-		digotalWrite() es muy lenta. Hay que hacerlo con unas macros que he
-		programado con los que he bajado el pulso de step de 2.65us a 300ns.
-		Ahora se puede bajar el periodo del timer. He conseguido que suba
-		a 200KHz comunicando sin mucho impacto en la comunicación con el PC.
-		De todas formas se va a quedar a 90 o 100 KHz.
 */
 /**********************************************************************/
 #include <Arduino.h>
@@ -99,6 +97,8 @@ void setup()
 		pinMode(LED1,OUTPUT); 
 		pinMode(LED2,OUTPUT); 
 		pinMode(LED3,OUTPUT); 
+		pinMode(LED4,OUTPUT); 
+		pinMode(LED5,OUTPUT); 
 		//Relés
 		pinMode(RELE_X,OUTPUT);     
 		pinMode(RELE_Y,OUTPUT);     
@@ -139,6 +139,9 @@ void setup()
 		programa_pasos(0); //Pasos programados a cero
 		cambia_sentido(SUBIR);//Sentido inicial
 		Contador=0; //Contador de pasos. Se incrementa con cada step de clk interno Timer_CLK 
+		//Leds 4 y 5 a 0
+		LED4_0
+		LED5_0
 		//o externo, pin DSP_CLK. Se pone a cero cada vez que se pone en marcha un motor. Se
 		//puede modificar con un comado SCPI
 		//Interrupción del pin DSP_CLK clk externo proporcinado por el DSP
@@ -164,7 +167,6 @@ void setup()
 		
 		//I2C.setClock(NORMAL_FREC_I2C);//Velocidad del I2C 0.1MHz 
   		AcelerometroConectado = busca_acelerometro();//Si hay acelerómetro pone AcelerometroConectado a true
-		
 	}
 	{// Convertidor AD, Timers e interrupciones externas ----------------------
 		// La interrupción del CLK_DSP se habilita solo si Frecuencia==0 en la función
@@ -175,7 +177,8 @@ void setup()
 		TIMER_CLK.attachInterrupt(timer_clk);//Timer para clk
 		TIMER_ADC.attachInterrupt(timer_ADC);
 		TIMER_FOTO_ACEL.attachInterrupt(timer_foto_acel);
-		TIMER_ADC.start(500/*microsegundos*/); //Periodo de muestreo ADC
+		//TIMER_ADC.start(TS_ADC_500us); //Arranca el timer del ADC
+		TIMER_ADC.start(TS_ADC_400us); //Arranca el timer del ADC
 	}// Fin convertidor AD, Timers e interrupciones externas -----------------
 }
 /***********************************************************************
@@ -193,10 +196,10 @@ void loop()
 	marcha_paro_motor() poner en marcha motores
 	y no se activan los 48V y no se ponen en marcha motores.
 	 */
-	if(Estado_48V && !digitalRead(DSP_48V)) //Situación de funcionamiento normal
+	if(Estado_48V && !_DSP_48V) //Situación de funcionamiento normal.(Experimental)anular el pin DSP_48V
 	{
 		marcha_paro_motor(PARO);
-		desactiva_48V(); 
+		desactiva_48V(); //(Experimental)aquí no llega porque fuerzo !_DSP_48V = 0
 	}
 	// Escucha los puertos
 	// Escucha  Serial1 de Dulcinea
@@ -221,6 +224,15 @@ void loop()
 		BaseScpi.scpi(&Serial);	
 		LED0_0 //digitalWrite(LED0,LOW);
 	}
+	//Completados los pasos pedidos, avisamos al que envió el comando y
+	//Desactivamos los 48V
+	if(StopPasos)
+	{
+		StopPasos=false;//Resetea el flag
+		Println(FSTOP);//Envía stop al PC o Android
+		//Si no está moviendo motor con el DSP desactiva los 48V
+		// if (Frecuencia!=0) desactiva_48V(); //no desactivamos (experimental)
+	}
 }
 /************************************************************************
         Conjunto de funciones que tocan y/o programan las variable
@@ -236,7 +248,7 @@ void loop()
  ************************************************************************/
 void timer_ADC()
 {
-	TEST_ADC_1 //digitalWrite(TEST_ADC,HIGH);
+	TEST_ADC_1 //pin 22 digitalWrite(TEST_ADC,HIGH);
 	FuerzaNormal.nuevoDato(analogRead(F_NORMAL)); //Lee  F.Normal
 	FuerzaLateral.nuevoDato(analogRead(F_LATERAL)); //Lee F. Lateral
 	Suma.nuevoDato(analogRead(SUM)); //Lee Suma
@@ -252,23 +264,27 @@ void timer_foto_acel()
 	char respuesta[64];
 	if(FotoAcel==FOTODIODO)
 	{
+		LED5_1
 		TEST_FOTODIODO_1 //PIN 38
 		float fl,fn,sum;
 		unsigned int fuerzaNormal,fuerzaLateral,suma;
 		fuerzaNormal=FuerzaNormal.media();
-		fn=-mFotoDiodo*fuerzaNormal+bFotoDiodo;
+		fn=mFotoDiodo*fuerzaNormal+bFotoDiodo+0.0015;
 		fuerzaLateral=FuerzaLateral.media();
-		fl=-mFotoDiodo*fuerzaLateral+12.26;
+		fl=mFotoDiodo*fuerzaLateral+bFotoDiodo+0.015;
 		suma=Suma.media();
-		sum=-mFotoDiodo*suma+bFotoDiodo;
-		sprintf	(respuesta,"FOT %f %f %f",fn,fl,sum);
+		sum=mFotoDiodo*suma+bFotoDiodo-0.08;
+		sprintf(respuesta,"%s %.2f %.2f %.2f",FFOTODIODO,fn,fl,sum);
+		//sprintf(respuesta,"%s %f %f %f",FFOTODIODO,fn,fl,sum);
 		Println(respuesta);
 		TEST_FOTODIODO_0
+		LED5_0
 	}
 	else //ACELEROMETRO
 	{
 		if(AcelerometroConectado)
 		{
+			LED4_1
 			TEST_ACELEROMETRO_1
 			if (Acelerometro.available()) 
 			{      // Wait for new data from accelerometer
@@ -276,10 +292,11 @@ void timer_foto_acel()
 				float EjeY=Acelerometro.getCalculatedY();
 				//float EjeZ=Acelerometro.getCalculatedZ();
 				//sprintf(respuesta,"AC %.4f %.4f %.4f",EjeX,EjeY,EjeZ);
-				sprintf(respuesta,"AC %.4f %.4f",EjeX,EjeY);
+				sprintf(respuesta,"%s %.4f %.4f",FACELEROMETRO,EjeX,EjeY);
 				Println(respuesta);
 			}
 			TEST_ACELEROMETRO_0
+			LED4_0
 		}
 		else //Si no hay acelerómetro da error y detiene el timer
 		{
@@ -287,6 +304,11 @@ void timer_foto_acel()
 			TIMER_FOTO_ACEL.stop();
 		}
 	}//else //ACELEROMETRO
+	//Si ha completado el número de envios para el timer
+	if(--contadorEnvios <= 0)
+	{
+		TIMER_FOTO_ACEL.stop();		
+	}
 }
 /************************************************************************
      INTERRUPCION DEL TIMER 5  para clk del step del módulo  TMCM-090
@@ -306,7 +328,11 @@ void timer_clk()
 		if(Pasos)//y quedan pasos por dar... 
 		{
 			//Si llegan a cero los pasos programados para el clk del step
-			if(--Pasos<=0) parar_clk_step();
+			if(--Pasos<=0) 
+			{
+				parar_clk_step();
+				StopPasos = true;
+			}
 		}
 		//Flanco de bajada
 		//delayMicroseconds(1);
@@ -348,7 +374,7 @@ int marcha_paro_motor(unsigned int MarchaParo)
 	switch (MarchaParo)
 	{
 		case MARCHA:
-		if(!digitalRead(DSP_48V)) 
+		if(!_DSP_48V) 
 		{
 			BaseScpi.errorscpi(18);//Potencia desactivada por el DSP
 			return 0; //Si el bit del DSP DSP_48V está a 0 no se pone en marcha
@@ -377,7 +403,7 @@ inline void parar_clk_step(void)
 		EstadoMarchaParo=PARO;
 		//Al parar, hay que dejar el clk a LOW
 		EstadoCLK=false;//Para informar del estado de la linea de clk
-		CLK_0 //digitalWrite(CLK,LOW);
+    	CLK_0 //digitalWrite(CLK,LOW);
 }
 /**************************************************************************
  *	Cambia el motor/es activos
@@ -389,9 +415,8 @@ inline void parar_clk_step(void)
  *************************************************************************/
 int cambia_motor(unsigned int numMotor)
 {
-	
 	bool FlagEstado48V=false;//Para ver si los 48 voltios están activados al entrar en la función
-	if(!digitalRead(DSP_48V)) numMotor=NINGUNO; //Si el bit del DSP DSP_48V, está a cero no selecciona motor
+	if(!_DSP_48V) numMotor=NINGUNO; //Si el bit del DSP DSP_48V, está a cero no selecciona motor
 	if(numMotor < MIN_MOTOR || numMotor > MAX_MOTOR )//Test de rangos
 	{
 		 BaseScpi.errorscpi(9);//Motor incorrecto
@@ -402,7 +427,7 @@ int cambia_motor(unsigned int numMotor)
 		if (Estado_48V)// Si hay que cambiar el motor y los 48 voltios están activos...
 		{
 			FlagEstado48V=true; //Para activar los 48V antes de salir
-			desactiva_48V();
+			desactiva_48V();//Para cambiar el motor activa hay que desactivar los 48V
 		}
 	DESACTIVA_MOTORES //Macro para desactivar todos los motores
 	switch (numMotor)
@@ -475,21 +500,12 @@ int cambia_motor(unsigned int numMotor)
  * **********************************************************************/
 void activa_48V(void)// Activa la fuente de 48V
 {		 
-	#define RETARDO_APAGADO 200 //ms
-	#define RETARDO_ENCENDIDO 50 //ms
-	/*
-		 TO DO
-		 ver como detectar que no se mueven
-		 motores para desactivar los 48 voltios
-		 automáticamente
-	*/
-	if(!digitalRead(DSP_48V)) return; //Si el bit del DSP está a 0, no se encienden los 48V
-	 
+	if(!_DSP_48V) return; //Si el bit del DSP está a 0, no se encienden los 48V
 	 if(Estado_48V) return;//Si las llamada es para encender 48V y ya lo estan, sale.
 	 digitalWrite(P15V_ON,HIGH); //Pone 15V a la entrada de la fuete de 48V
-	 delay(RETARDO_ENCENDIDO);//Espera antes de poner en marcha la fuente
+	 delay(RETARDO_ENCENDIDO1);//Espera antes de poner en marcha la fuente
 	 digitalWrite(LM500_SHDWN,HIGH); //Activa la fuente de 48V 
-	 delay(RETARDO_ENCENDIDO);//Espera antes de salir
+	 delay(RETARDO_ENCENDIDO2);//Espera antes de salir
 	 LED1_1//digitalWrite(LED1,HIGH);
 	 Estado_48V=true; //48 voltios encendidos
 }
@@ -628,6 +644,7 @@ int cambia_frecuencia_resolucion(unsigned int Frec,unsigned int Res)
 	{
 		TIMER_CLK.stop();//Inhabilita interrupción del pin TIMER_CLK
 		//Como la frecuencia es 0 el CLK lo controla del DSP
+		activa_48V();//Si va a mover motores desde el DSP con DSP_CLK activamos los 48V
 		attachInterrupt(digitalPinToInterrupt(DSP_CLK),clk_externo,FALLING);
 		return 1;
 	}
@@ -699,7 +716,8 @@ bool busca_acelerometro(void)
 	return false;
 }
 /**************************************************************************
-*	busca e inicializa el sensor AHT10 en el I2C
+*	Busca e inicializa el sensor AHT10 en el I2C,
+	si está presente devuelve true, si no false.
 *************************************************************************/
 bool busca_aht10(void)
 {
@@ -733,7 +751,7 @@ void pc_marcha_motor_pasos(void)
 	// Si solo pregunta por los datos, se responde y sale
 	if(BaseScpi.FinComando[0]=='?')	
 	{
-		sprintf(respuesta,"%u %u %u %u %u",MotorActivo,Resolucion,Frecuencia,Sentido,Pasos);//Envía las variables globales del sistema
+		sprintf(respuesta,"%s %u %u %u %u %u",FMARCHAMOTORPASOS,MotorActivo,Resolucion,Frecuencia,Sentido,Pasos);//Envía las variables globales del sistema
 		Println(respuesta);
 		 return;
 	}
@@ -789,7 +807,7 @@ void pc_marcha_motor(void)
 	if(BaseScpi.FinComando[0]=='?'|| (BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?'))	
 	{
 		//Envía las variables globales del sistema
-		sprintf(respuesta,"MM %u %u %u %u",MotorActivo,Resolucion,Frecuencia,Sentido);
+		sprintf(respuesta,"%s %u %u %u %u",FMARCHAMOTOR, MotorActivo,Resolucion,Frecuencia,Sentido);
 		Println(respuesta);
 		return;
 	}
@@ -834,7 +852,7 @@ void pc_variables(void)
 	if( BaseScpi.FinComando[0]=='?' || (BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?') )	
 	{
 		//Envía TODAS las variables globales del sistema
-		sprintf(respuesta,"VAR %u %u %u %u %u %u %u",MotorActivo,Resolucion,Frecuencia,Sentido,Pasos,EstadoMarchaParo,ModoDeOnda);
+		sprintf(respuesta,"%s %u %u %u %u %u %u %u",FVARIABLES,MotorActivo,Resolucion,Frecuencia,Sentido,Pasos,EstadoMarchaParo,ModoDeOnda);
 		Println(respuesta);
 		return;
 	}
@@ -853,7 +871,7 @@ void pc_contador(void)
 	//Si piden el dato con firma...
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"CO %u",Contador);
+		sprintf(respuesta,"%s %u",FCONTADOR,Contador);
 		Println(respuesta); 
     	return;
 	}
@@ -876,7 +894,7 @@ void pc_anda_numero_de_pasos(void)
 	//Si piden el dato con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"AN %u",Pasos);
+		sprintf(respuesta,"%s %u",FANDANUMERODEPASOS,Pasos);
 		Println(respuesta); 
     	return;
 	}
@@ -897,7 +915,7 @@ void pc_marcha_paro(void)
 	//Si pregunta por la variable con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"MP %u",EstadoMarchaParo);
+		sprintf(respuesta,"%s %u",FMARCHAPARO,EstadoMarchaParo);
 		Println(respuesta); 
     	return;
 	}
@@ -921,7 +939,7 @@ void pc_sentido(void)
 	//Si pregunta por la variable con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"SE %u",Sentido);
+		sprintf(respuesta,"%s %u",FSENTIDO,Sentido);
 		Println(respuesta); 
     	return;
 	}
@@ -945,7 +963,7 @@ void pc_frecuencia(void)
 	//Si pregunta por la variable con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"FR %u",Frecuencia);
+		sprintf(respuesta,"%s %u",FFRECUENCIA,Frecuencia);
 		Println(respuesta); 
     	return;
 	}
@@ -968,7 +986,7 @@ void pc_motor_activo(void)
 	//Si pregunta por la variable con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"MA %u",MotorActivo);
+		sprintf(respuesta,"%s %u",FMOTORACTIVO,MotorActivo);
 		Println(respuesta); 
     	return;
 	}
@@ -990,7 +1008,7 @@ void pc_resolucion(void)
 	//Si pregunta por la variable con firma...
 	if(BaseScpi.FinComando[0]==' '&& BaseScpi.FinComando[1]=='?')
 	{
-		sprintf(respuesta,"RE %u",Resolucion);
+		sprintf(respuesta,"%s %u",FRESOLUCION,Resolucion);
 		Println(respuesta);
 		return;
 	}
@@ -1015,7 +1033,7 @@ void pc_onda(void)
 	//Si pregunta por la variable con firma
 	if(BaseScpi.FinComando[0]==' ' && BaseScpi.FinComando[1]=='?')  
 	{
-		sprintf(respuesta,"ON %u",ModoDeOnda);
+		sprintf(respuesta,"%s %u",FONDA,ModoDeOnda);
 		Println(respuesta); 
     	return;
 	}
@@ -1033,8 +1051,13 @@ void pc_onda(void)
  * **********************************************************************/
 void pc_inicia_fotodiodo(void)
 {
+	int envios;
+	//Lee el número de envios a realizar
+	if (sscanf(BaseScpi.FinComando,"%u",&envios)==1)
+		contadorEnvios=envios; //Inicaliza el contador de envios a realizar;
+	else contadorEnvios=1;//Si no envía el número de envios se realiza 1;	
 	FotoAcel = FOTODIODO;
-	TIMER_FOTO_ACEL.start(T200ms);//100ms	
+	TIMER_FOTO_ACEL.start(T200ms);//200ms	
 }
 void pc_fin_fotodiodo(void)
 {
@@ -1047,7 +1070,13 @@ void pc_fin_fotodiodo(void)
  * **********************************************************************/
 void pc_inicia_acelerometro(void)
 {
+	int envios;
+	//Lee el número de envios a realizar
+	if (sscanf(BaseScpi.FinComando,"%u",&envios)==1)
+		contadorEnvios=envios; //Inicaliza el contador de envios a realizar;
+	else contadorEnvios=1;//Si no envía el número de envios se realiza 1	
 	FotoAcel = ACELEROMETRO;
+	
 	TIMER_FOTO_ACEL.start(T200ms);//100ms	
 }
 void pc_fin_acelerometro(void)
@@ -1074,44 +1103,41 @@ void pc_fotodiodo(void)
 	fn=mFotoDiodo*fuerzaNormal+bFotoDiodo;
 	//fn=3.3*fuerzaNormal/4096;
 	fuerzaLateral=FuerzaLateral.media();
-	fl=-mFotoDiodo*fuerzaLateral+bFotoDiodo;
+	fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;
 	//fl=3.3*fuerzaLateral/4096;
 	suma=Suma.media();
-	sum=-mFotoDiodo*suma+bFotoDiodo;
-	//sum=3.3*suma/4096;
-
-	//unsigned int FN=analogRead(F_NORMAL);
-	//unsigned int FL=analogRead(F_LATERAL);
-	//unsigned int SUMA=analogRead(SUM);
-	//unsigned int TEST=analogRead(A0);
-
-
-	sprintf(respuesta,"FOT %.2f %.2f %.2f",fn,fl,sum);
-	//sprintf	(respuesta,"FOT %u %u %u %U",FN,FL,SUMA,TEST);
+	sum=mFotoDiodo*suma+bFotoDiodo;
+	sprintf(respuesta,"%s %.2f %.2f %.2f",FFOTODIODO,fn,fl,sum);
 	Println(respuesta);
 }
 /*************************************************************************
-		Lee el sensor de temperatura y humedad y lo envia al pc
-		el DHT-22 tarda 5,68ms
-		El comando se procesa en 6,32ms. No se puede bajar
+		Lee el sensor de temperatura y humedad y lo envia al PC.
+		El sensor SHT11 está obsoleto.
+		Con el DHT-22 tarda 5,68ms el comando se procesa en 6,32ms.
+		Con el sensor AHT10 el  comando se procesa en 525us. Tiene el
+		inconveniente que no puede compartir el I2C.
 		Comando MOT:TH?
  * **********************************************************************/
 void pc_sensor_temperatura_humedad(void)
 {
+	TEST_SENSORHT_1 //pin 30 digitalWrite(TEST_SENSORHT,HIGH);
+	LED3_1 //digitalWrite(LED3,HIGH);//Para test
 	if(BaseScpi.FinComando[0]!='?')  
 	{
 		BaseScpi.errorscpi(4);//Parámetro inexistente
+		LED3_0//digitalWrite(LED3,LOW);
+		TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);
 		return;
 	}
-	TEST_SENSORHT_1 //digitalWrite(TEST_SENSORHT,HIGH);
-	if(EstadoMarchaParo==MARCHA)//moviendo motores no lee el sensor
+		if(EstadoMarchaParo==MARCHA)//moviendo motores no lee el sensor
 	{
 		//sprintf(Datos,"T%5.1f H%5.1f",0.0,0.0);
 		Println("T 0.0 H 0.0");
+		LED3_0//digitalWrite(LED3,LOW);
+		TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);	
 		return;
 	}
-	TIMER_ADC.stop();//Este comando desactiva las interrupciones
-	LED3_1 //digitalWrite(LED3,HIGH);//Para test
+	
 #ifdef SENSOR_SHT11
 	char Datos[128];
 	//SHT1x SHT11(SEN_DATA, SEN_CLK);
@@ -1119,25 +1145,28 @@ void pc_sensor_temperatura_humedad(void)
 	float Humedad;
 	Temperatura = SHT11.readTemperatureC();
 	Humedad = SHT11.readHumidity();
-	sprintf(Datos,"T%5.1f H%5.1f",Temperatura,Humedad);
+	sprintf(Datos,"%s %5.1f H%5.1f",FTEMPERATURA,Temperatura,Humedad);
 	// Envía valores por el puerto
 	Println(Datos)
 #endif
 #ifdef SENSOR_DHT22
 	char Datos[128];	
+	TIMER_ADC.stop();//Con el sensor DHT-22 se desactiva las interrupciones
 	//DHT dht(SEN_DATA, DHT22);
 	float Humedad = dht.readHumidity();
   	//delay(100);// TO DO intentar bajar 
   	float Temperatura = dht.readTemperature();
-  	sprintf(Datos,"T%5.1f H%5.1f",Temperatura,Humedad);
+  	sprintf(Datos,"%s %5.1f H%5.1f",FTEMPERATURA,Temperatura,Humedad);
 	// Check if any reads failed and exit early (to try again).
   	if (isnan(Humedad) || isnan(Temperatura))
 	{
     	BaseScpi.errorscpi(21);//Error lectura sensor humedad temperatura
 	}
 	Println(Datos);
+	TIMER_ADC.start();//Con el sensor DHT-22 se desactiva las interrupciones
 #endif
-#ifdef SENSOR_AHT10
+//El DHT10 se utiliza sin librería. Para ver como se utiliza estudiar alguna librería
+#ifdef SENSOR_AHT10 //Este sensor tarda 520uS
 	if(aht10Conectado)
 	{
 		char Datos[128];
@@ -1146,7 +1175,13 @@ void pc_sensor_temperatura_humedad(void)
 		I2C_AHT10.beginTransmission(AHT10_ADD);
 		uint8_t comando[3]={0xAC, 0x33, 0x00};
 		I2C_AHT10.write(comando,3); //Secuencia de comandos para leer la medida
-		if (I2C_AHT10.endTransmission(true) != 0){BaseScpi.errorscpi(25);return;}//Si falla la transmisión hay error
+		if (I2C_AHT10.endTransmission(true) != 0)
+		{
+			BaseScpi.errorscpi(25);
+			LED3_0//digitalWrite(LED3,LOW);
+			TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);
+			return;
+		}//Si falla la transmisión hay error
 		// lee 6 bytes del sensor
 		I2C_AHT10.requestFrom(AHT10_ADD, 6, true);//Solicita datos al dispositivo
 		if (I2C_AHT10.available() != 6){BaseScpi.errorscpi(25);}//Si no hay 6 datos sale con error
@@ -1160,14 +1195,16 @@ void pc_sensor_temperatura_humedad(void)
 		if (Humedad < 0.0)   Humedad= 0.0;
 		if (Humedad > 100.0) Humedad = 100.0;
 		//Envía los datos por el puerto
-		sprintf(Datos,"T%5.1f H%5.1f",Temperatura,Humedad);
+		sprintf(Datos,"%s %5.1f H%5.1f",FTEMPERATURA,Temperatura,Humedad);
 		Println(Datos);
 	}
 	else BaseScpi.errorscpi(24);//Error no hay sensor conectado
  #endif
+	
+
 	LED3_0//digitalWrite(LED3,LOW);
 	TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);
-	TIMER_ADC.start();
+	return;
 }
 /*************************************************************************
 		Lee el acelerómetro y lo envia al pc
@@ -1198,8 +1235,8 @@ void pc_acelerometro(void)
 		EjeX=Acelerometro.getCalculatedX(); 
 		EjeY=Acelerometro.getCalculatedY();
 		//EjeZ=Acelerometro.getCalculatedZ();
-		//sprintf(respuesta,"AC %.2f %.2f %.2f",EjeX,EjeY,EjeZ);
-		sprintf(respuesta,"AC %4f %4f",EjeX,EjeY);
+		//sprintf(respuesta,"%s %.2f %.2f %.2f",FACELEROMETRO,EjeX,EjeY,EjeZ);
+		sprintf(respuesta,"%s %4f %4f",FACELEROMETRO,EjeX,EjeY);
 		Println(respuesta);
 	}
 	else 
@@ -1209,6 +1246,32 @@ void pc_acelerometro(void)
 		return;
 	}//No hay acelerómetro conectado
 	TEST_ACELEROMETRO_0
+}
+/*************************************************************************
+		Desactiva el DC/DC de 48V
+		Comando MOT:DV 1
+ * **********************************************************************/
+void pc_activa_48v()
+{
+	if (BaseScpi.FinComando[0]==' ')
+	{
+		switch (BaseScpi.FinComando[1])
+		{
+		case '0':
+			desactiva_48V();
+		break;
+		case '1':
+			activa_48V();
+		break;
+		case '?':
+			Println(FESTADO48V + String(Estado_48V));	
+		break;		
+		default:
+			BaseScpi.errorscpi(4);//Parámetro erroneo
+		break;
+		}
+	}
+	else BaseScpi.errorscpi(5);//Formato no válido
 }
 /**************************************************************************
   Función que atiende al comando del pc que pone el sistema en el 
@@ -1235,7 +1298,8 @@ void pc_reset(void)
 ************************************************************************/
 void pc_version(void)
 {
-	if(BaseScpi.FinComando[0]=='?') Println(Version);
+	String respuesta = FVERSION+(String)" "+(String)Version;
+	if(BaseScpi.FinComando[0]=='?') Println(respuesta);
 	else BaseScpi.errorscpi(4);//Parámetro inexistente
 }
 /************************************************************************
@@ -1264,14 +1328,14 @@ void  bluetooth_estado(void)
 	unsigned int fuerzaNormal,fuerzaLateral,suma,emp;
 	//calcula las señales con ajuste de offset y ganancia 
 	fuerzaNormal=FuerzaNormal.media();
-	fn=-mFotoDiodo*fuerzaNormal+bFotoDiodo;
+	fn=mFotoDiodo*fuerzaNormal+bFotoDiodo;
 	fuerzaLateral=FuerzaLateral.media();
-	fl=-mFotoDiodo*fuerzaLateral+bFotoDiodo;
+	fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;
 	suma=Suma.media();
-	sum=-mFotoDiodo*suma+bFotoDiodo;
+	sum=mFotoDiodo*suma+bFotoDiodo;
 	if(EstadoMarchaParo) emp=10;
 	else emp=5;
-	sprintf	(respuesta,"EST %f %f %f %u %u",fn,fl,sum,emp,Pasos);
+	sprintf	(respuesta,"%s %.2f %.2f %.2f %u %u",FBLUETOOTHESTADO,fn,fl,sum,emp,Pasos);
 	Println(respuesta);
 }
 /**************************************************************************
@@ -1342,12 +1406,7 @@ void bluetooth_marcha_motor(void)
 void bluetooth_para_motor(void)
 {
 	marcha_paro_motor(PARO); 
-	/*
-	TO DO 
-	Esto hay que cambiarlo porque en el futuro puede dar problemas
-	mejor que devuelva "SP" o algo así
-	*/
-	Println("ST");
+	Println(FSTOP);
 }
 /************************************************************************
 		FIN DE FUNCIONES QUE RESPONDEN A COMANDOS DEL BLUETOOTH

@@ -45,6 +45,12 @@
 #define LED3  35 //Led 3 Arduino pin 35 es port C pin 3.
 #define LED3_1 PIOC->PIO_SODR=(1<<3);   // set pin
 #define LED3_0 PIOC->PIO_CODR=(1<<3);  // clear pin
+#define LED4  68 //Led 4 Arduino pin 68 es port A pin 1.
+#define LED4_1 PIOA->PIO_SODR=(1<<1);   // set pin
+#define LED4_0 PIOA->PIO_CODR=(1<<1);  // clear pin
+#define LED5  69 //Led 5 Arduino pin 69 es port A pin 0.
+#define LED5_1 PIOA->PIO_SODR=(1<<0);   // set pin
+#define LED5_0 PIOA->PIO_CODR=(1<<0);  // clear pin
 // Acelerómetros
 #define I2_1 14	
 #define I1_1 15
@@ -187,6 +193,7 @@ void pc_inicia_fotodiodo(void);
 void pc_fin_fotodiodo(void);
 void pc_inicia_acelerometro(void);
 void pc_fin_acelerometro(void);
+void pc_activa_48v(); //Activa/desactiva ed DC/DC 48V
 //Funciones scpi comunes a todos los sistemas
 void errorSCPI(void);
 void opcSCPI(void);
@@ -293,6 +300,7 @@ tipoNivel MOTORES[] = //Comandos del PC que hacen funcionar el sistema
 	SCPI_COMANDO(MARCHAMOTORPASOS,MMP,pc_marcha_motor_pasos)//Programa un motor con resolución, frecuencia, sentido y pasos y lo pone en marcha
 	SCPI_COMANDO(MARCHAMOTOR,MM,pc_marcha_motor)//Programa un motor con resolución, frecuencia, sentido y lo pone en marcha
 	SCPI_COMANDO(MARCHAPARO,MP, pc_marcha_paro)//Pone en marcha el motor seleccionado
+	SCPI_COMANDO(ACTIVA48V,AV,pc_activa_48v)//Activa 48V
 	SCPI_COMANDO(FRECUENCIA,FR,pc_frecuencia)//Actualiza el valor de frecuencia de paso (micropaso)
 	SCPI_COMANDO(ANPASOS,AN,pc_anda_numero_de_pasos)// Programa un número de pasos a dar "Pasos" y se decremente cada paso 
 	SCPI_COMANDO(MOTORACTIVO,MA,pc_motor_activo)//Cambia el motor seleccionado
@@ -409,6 +417,8 @@ String ErroresBaseSPM[]=
   "23 No hay acelerometro conectado",
   "24 No hay sensor conectado",
   "25 Error en el sensor",
+  "26 Falta la cantidad de envios a realizar",
+
 };
 /************************************************************************
     Objetos, constantes y variables de estado del sistema	(globales)	
@@ -422,6 +432,14 @@ float bFotoDiodo = 13.26;
 //Acelerómetro MMA8452
 MMA8452Q Acelerometro;
 bool AcelerometroConectado=false;
+//Retardos para el apagado y encendido del DC/DC de 48V
+#define RETARDO_APAGADO 200 //ms
+#define RETARDO_ENCENDIDO1 25 //ms
+#define RETARDO_ENCENDIDO2 100 //ms
+//Periodos de muestreo para el timer del ADC
+#define TS_ADC_400us 400 //microsegundos
+#define TS_ACD200us 200 //microsegundos
+#define TS_ADC_300us 300 //microsegundos
 bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetro
 #define ACELEROMETRO 1
 #define FOTODIODO 0
@@ -429,6 +447,8 @@ bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetr
 #define T100ms 100000 
 #define T150ms 150000
 #define T50ms   50000
+int contadorEnvios=0;
+#define ENVIOS_MAXIMOS 10000 //Contador de envios de fotodiodo o acelerómetro 60' si se envía cada 200ms
 //Sensor humedad temperatura descomentar el que se use 
 //#define SENSOR_SHT11
 //#define SENSOR_DHT22
@@ -447,15 +467,10 @@ bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetr
 //Objeto SCPI
 String NombreDelSistema = "Base SPM"; //Puesto para depuración. Se puede quitar.
 SegaSCPI BaseScpi(Raiz,"Base SPM",ErroresBaseSPM);
-//Para no tener que teclear todo al aludir al puerto serie 
- //BaseScpi.PuertoActual->println(); ahora sería puerto->println();;
-#define Println BaseScpi.PuertoActual->println 
-//#define Printf BaseScpi.PuertoActual->printf //No soporta Serial.printf
-#define Print BaseScpi.PuertoActual->print
+bool StopPasos=false; //Flag para informar de que se han dado los pasos pedidos
 char Version[]="Base SPM V1.2";//Las distintas "Bases SPM" pueden tener versión
 //Variables para depuración. Activación con "depuracion" y puerto para depuración
 bool depuracion=false; //1 para hacer depuración del software. 0 servicio 
-#define debug Serial.print //Puerto para depuracion
 //normal. El modo depuración se usa en la fase de desarrollo del software
 //para que el sistema envia al PC cadenas con información relevante
 bool EstadoCLK;// Estado de la linea de CLK
@@ -471,7 +486,7 @@ unsigned int MotorActivo;
 unsigned int Sentido=SUBIR;
 unsigned int ModoDeOnda;/*=OMEGA564 siempre*/;
 //Arrays para meter muestras de la adquisición del ADC
-#define LONG_MUESTRAS 16 // Al princio 64
+#define LONG_MUESTRAS 50 // Con 50 muestras y Ts 400us lee un ciclo de red para filtrar 50Hz
 Muestras FuerzaNormal(LONG_MUESTRAS);
 Muestras FuerzaLateral(LONG_MUESTRAS);
 Muestras Suma(LONG_MUESTRAS);
@@ -497,5 +512,35 @@ int Periodo[]={1000, 1000, 500, 333, 250, 200, 167, 143, 125, 111, 100, 91, 83,
 	digitalWrite(RELE_X,LOW);\
 	digitalWrite(RELE_Y,LOW);\
 	digitalWrite(RELE_HD,LOW);}
+//Macro para la lectura del pin DSP_48V 
+//#define _DSP_48V digitalRead(DSP_48V) //Lectura del pin del DSP
+#define _DSP_48V 1 //Anulo la lectura y fuerzo el valor a 1
+// Serial
+//Para no tener que teclear todo al aludir al puerto serie 
+ //BaseScpi.PuertoActual->println(); ahora sería puerto->println();;
+#define Println BaseScpi.PuertoActual->println 
+//#define Printf BaseScpi.PuertoActual->printf //No soporta Serial.printf
+#define Print BaseScpi.PuertoActual->print
+#define debug Serial.print //Puerto para depuracion
 /************************************************************************
+ * Firmas de las  cadenas enviadas por serial
 ************************************************************************/
+#define FMARCHAMOTORPASOS  "VM" //pc_marcha_motor_pasos(void); 
+#define FMARCHAMOTOR       "HX" //pc_marcha_motor(void);
+#define FVARIABLES         "BL" //pc_variables(void);
+#define FCONTADOR          "XT" //pc_contador(void);
+#define FANDANUMERODEPASOS "SZ" //pc_anda_numero_de_pasos(void);
+#define FMARCHAPARO        "PM" //pc_marcha_paro(void);
+#define FSENTIDO           "WD" //pc_sentido(void); 
+#define FFRECUENCIA        "CR" //pc_frecuencia(void); 
+#define FMOTORACTIVO       "MV" //pc_motor_activo(void);
+#define FRESOLUCION        "RS" //pc_resolucion(void);
+#define FONDA              "NN" //pc_onda(void);
+#define FFOTODIODO         "FT" //pc_fotodiodo(void); 
+#define FTEMPERATURA       "T "  //pc_sensor_temperatura_humedad(void); 
+#define FACELEROMETRO      "LC" //pc_acelerometro(void);
+#define FVERSION           "KK" //pc_version(void); 
+#define FIDN               "DW" //void idnSCPI(void); 
+#define FSTOP              "ZP" //Mensaje de parada. Se envía para informar de parada de motor
+#define FBLUETOOTHESTADO   "YY" //void  bluetooth_estado(void)
+#define FESTADO48V         "JJ" //La cadena es 1 o 0 estado del DC/DC activo o no
