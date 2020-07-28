@@ -494,8 +494,8 @@ int cambia_motor(unsigned int numMotor)
 	return MotorActivo=numMotor;
 }
 /*************************************************************************
-	Encendido y apagado de la alimentación del módulo TMCM-090
-	Solo aquí se tocan los pines del DC/DC y se actualiza la 
+	Encendido de los 48V del módulo TMCM-090
+	Aquí se tocan los pines del DC/DC y se actualiza la 
 	variable "Estado_48V"  
  * **********************************************************************/
 void activa_48V(void)// Activa la fuente de 48V
@@ -509,6 +509,11 @@ void activa_48V(void)// Activa la fuente de 48V
 	 LED1_1//digitalWrite(LED1,HIGH);
 	 Estado_48V=true; //48 voltios encendidos
 }
+/*************************************************************************
+	Apagado de los 48V del módulo TMCM-090
+	Aquí se tocan los pines del DC/DC y se actualiza la 
+	variable "Estado_48V"  
+ * **********************************************************************/
 void desactiva_48V(void)// Desactiva la fuente de 48V
 {
 	if(Estado_48V)
@@ -1253,6 +1258,13 @@ void pc_acelerometro(void)
  * **********************************************************************/
 void pc_activa_48v()
 {
+	if (BaseScpi.FinComando[0]=='?')
+	{
+		char Respuesta[32];
+		sprintf(Respuesta,"%s %u",FESTADO48V,Estado_48V);
+		Println(Respuesta);	
+		return;
+	}
 	if (BaseScpi.FinComando[0]==' ')
 	{
 		switch (BaseScpi.FinComando[1])
@@ -1264,7 +1276,9 @@ void pc_activa_48v()
 			activa_48V();
 		break;
 		case '?':
-			Println(FESTADO48V + String(Estado_48V));	
+			char Respuesta[32];
+			sprintf(Respuesta,"%s %u",FESTADO48V,Estado_48V);
+			Println(Respuesta);	
 		break;		
 		default:
 			BaseScpi.errorscpi(4);//Parámetro erroneo
