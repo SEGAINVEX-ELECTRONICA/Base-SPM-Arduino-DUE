@@ -292,7 +292,7 @@ void timer_foto_acel()
 				float EjeY=Acelerometro.getCalculatedY();
 				//float EjeZ=Acelerometro.getCalculatedZ();
 				//sprintf(respuesta,"AC %.4f %.4f %.4f",EjeX,EjeY,EjeZ);
-				sprintf(respuesta,"%s %.4f %.4f",FACELEROMETRO,EjeX,EjeY);
+				sprintf(respuesta,"%s %.3f %.3f",FACELEROMETRO,EjeX,EjeY);
 				Println(respuesta);
 			}
 			TEST_ACELEROMETRO_0
@@ -1241,7 +1241,7 @@ void pc_acelerometro(void)
 		EjeY=Acelerometro.getCalculatedY();
 		//EjeZ=Acelerometro.getCalculatedZ();
 		//sprintf(respuesta,"%s %.2f %.2f %.2f",FACELEROMETRO,EjeX,EjeY,EjeZ);
-		sprintf(respuesta,"%s %4f %4f",FACELEROMETRO,EjeX,EjeY);
+		sprintf(respuesta,"%s %.3f %.3f",FACELEROMETRO,EjeX,EjeY);
 		Println(respuesta);
 	}
 	else 
