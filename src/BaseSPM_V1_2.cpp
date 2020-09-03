@@ -37,9 +37,15 @@
 	-4. He bajado el periodo de muestreo a 400us (2,5KHz). 
 	-5. Los 48V se activan o desactivan desde el PC o Android (experimental)
 
+	Tareas pendientes y correcciones
+	-1.	Es sensor  AHT10 tiene que estar solo en el I2C. Hay que cambiarlo.
+	-2. El Serial3 es incompatible con el uso del Wire1.
+	-3. Reconectar el Serial3 con el Serial. Este se puede utilizar aunque
+		sea el utilizado por el programing port.
+	
 
-	25/05/2020
-	Editado el 27/07/2020
+	Versión de 25/05/2020
+	Ultimos cambios 03/09/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
@@ -59,6 +65,10 @@
 ***************************************************************************/	
 /*
 		TODO
+		Cambiar el AHT10.
+		Poner todos los sensores en el Wire (no Wire1)
+
+
 	
 */
 /**********************************************************************/

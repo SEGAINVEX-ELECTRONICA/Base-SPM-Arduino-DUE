@@ -308,10 +308,10 @@ tipoNivel MOTORES[] = //Comandos del PC que hacen funcionar el sistema
 	SCPI_COMANDO(SENT,SE,pc_sentido)//Para cambiar el sentido
 	SCPI_COMANDO(CONTADOR,CO,pc_contador)//Contador que se inicializa trás un comando de "marcha"
 	SCPI_COMANDO(ACELEROM,AC,pc_acelerometro)//Lee el acelerómetro
-	SCPI_COMANDO(INIFOT,IFO,pc_inicia_fotodiodo)//El fotodiodo envia datos cada 100ms
- 	SCPI_COMANDO(FINFOT,FIF,pc_fin_fotodiodo)//El fotodiodo deja de envia datos cada 100ms
-	SCPI_COMANDO(INIACEL,IAC,pc_inicia_acelerometro)//El acelerometro envia datos cada 100ms
- 	SCPI_COMANDO(FINACEL,FNA,pc_fin_acelerometro)//El acelerometro deja de envia datos cada 100ms
+	SCPI_COMANDO(INIFOT,IFO,pc_inicia_fotodiodo)//El fotodiodo envia datos cada 200ms
+ 	SCPI_COMANDO(FINFOT,FIF,pc_fin_fotodiodo)//El fotodiodo deja de envia datos cada 200ms
+	SCPI_COMANDO(INIACEL,IAC,pc_inicia_acelerometro)//El acelerometro envia datos cada 200ms
+ 	SCPI_COMANDO(FINACEL,FNA,pc_fin_acelerometro)//El acelerometro deja de envia datos cada 200ms
 	SCPI_COMANDO(RESET,RS,pc_reset)//Pone la base en su estado inicial
 	SCPI_COMANDO(VARIABLES,VAR,pc_variables)//Pone las variables en un estado determinado
 	SCPI_COMANDO(VERSION,VER,pc_version)// Envía al PC la versión del software
