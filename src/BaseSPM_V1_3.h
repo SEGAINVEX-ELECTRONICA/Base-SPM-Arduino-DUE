@@ -67,8 +67,8 @@
 #define MHD1 3
 #define MHD0 2
 // Lineas de control desde Dulcinea 
-#define DSP_CLK 5
-#define DSP_48V 4
+#define DSP_CLK A8 //cambiado, antes era 5.16/09/2020
+#define DSP_48V A9// cambiado, antes era 4.16/09/2020
 // Timer para clk del driver de motores piezoleg 
 #define TIMER_CLK Timer5
 #define TIMER_ADC Timer4

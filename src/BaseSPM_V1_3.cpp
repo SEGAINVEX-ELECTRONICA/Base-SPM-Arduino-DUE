@@ -3,6 +3,9 @@
 	SEGAINVEX: Electrónica
 	OT: 20190335, 20191136 
 	Proyecto: Programación de la Base SPM con Arduino DUE 
+	
+	Versión 1.3 16/05/2020
+	
 	Aplicación para placa PCB_A con el Arduino DUE
 	Patricio Coronado. Mayo de 2019
 	Revisión Abril-mayo 2020
@@ -14,10 +17,10 @@
 	Bluetooth a 9600 baudios. El resto a 115200 con el nº
 	de orden en el nombre del Bluetooth BASE_SPM_XXXXXXXX 
 
-	mejoras en versión 1_1:
+	mejoras sobre la versión 1_1:
 	
 	-1.	Esta versión no contempla la programación del mando
-		infrarojo.
+		infrarojo. 
 	-2. He programado el acelerómetro	
 	-3. He programado  acelerómetro	y fotodiodo enviando datos
 		cada 200ms
@@ -26,6 +29,14 @@
 	-5. La frecuencia de paso (micropaso) ha subido de 90KHz
 		a 120KHz y hay margen para subirla.
 	-6. Anulo la función del pin del DSP DSP_48V 
+	-7. La comunicación con el mando se hace por Bluetooth
+	
+	mejoras sobre la versión 1_2:
+	
+	-1.	El sensor de humedad y temperatura va sobre I2C aunque
+		hay que seguir probando dispositios.
+		
+			
 	
 	Ultimas modificaciones (experimental):
 	
@@ -36,16 +47,26 @@
 	-3. El sensor AHT10 se maneja con el i2c Wire1 directamente sin librería.
 	-4. He bajado el periodo de muestreo a 400us (2,5KHz). 
 	-5. Los 48V se activan o desactivan desde el PC o Android (experimental)
+	-6. He redefinido los pines DSP_CLK y DSP_48V 
+		#define DSP_CLK A8 //cambiado, antes era 5.16/09/2020
+		#define DSP_48V A9// cambiado, antes era 4.16/09/2020
+		Ahora las señales del DSP llegan a través de un integrado puesto
+		en el backplane que adminte señales del DSP de 5 y 3,3V y su
+		salida es de 3,3V.
+
 
 	Tareas pendientes y correcciones
 	-1.	Es sensor  AHT10 tiene que estar solo en el I2C. Hay que cambiarlo.
 	-2. El Serial3 es incompatible con el uso del Wire1.
 	-3. Reconectar el Serial3 con el Serial. Este se puede utilizar aunque
-		sea el utilizado por el programing port.
+		sea el utilizado por el programing port. O utilizar solo el Wire
+		(no el Wire1) para todos los sensores.
+	-4.	Alimentar los sensores I2C con 3V3 voltios distintos del DUE.
+
 	
 
-	Versión de 25/05/2020
-	Ultimos cambios 03/09/2020
+	
+	Ultimos cambios en el código 16/09/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
@@ -152,9 +173,6 @@ void setup()
 		//Leds 4 y 5 a 0
 		LED4_0
 		LED5_0
-		//o externo, pin DSP_CLK. Se pone a cero cada vez que se pone en marcha un motor. Se
-		//puede modificar con un comado SCPI
-		//Interrupción del pin DSP_CLK clk externo proporcinado por el DSP
 	}//Fin inicializa al estado por defecto de las  variables del sistema-----
 	{//Puertos serie Serial Serial1 y Serial2 ---------------------------------
 		Serial.begin(115200); //Programing port
@@ -653,7 +671,7 @@ int cambia_frecuencia_resolucion(unsigned int Frec,unsigned int Res)
 	Resolucion=Res; //Actualiza la variable global "Resolucion"
 	//Si se estaba moviendo un motor lo deja moviendose
 	//Si la frecuencia es cero hay que inhabilitar Timer3_CLK
-	//y la interrupción del pin DSP_CLK está siempre habilitada
+	//y Habilitar la interrupción del DSP_CLK
 	//pero si la frecuencia no es cero sale de la función de interrupción
 	if(Frecuencia==0)	
 	{
