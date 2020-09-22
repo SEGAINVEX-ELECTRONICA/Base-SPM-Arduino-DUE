@@ -64,8 +64,6 @@
 	-4.	Alimentar los sensores I2C con 3V3 voltios distintos del DUE.
 
 	
-
-	
 	Ultimos cambios en el código 16/09/2020
 */
 /**************************************************************************
@@ -100,7 +98,7 @@
 #include "DHT.h"//Sensor de humedad temperatura DHT22
 #include "SparkFun_MMA8452Q.h"//acelerómetro MMA8452Q
 #include "SegaSCPI.h"
-#include "BaseSPM_V1_2.h"//Constantes, tipos, prototipos y variables globales
+#include "BaseSPM_V1_3.h"//Constantes, tipos, prototipos y variables globales
 /***********************************************************************
  * 							SETUP
  ***********************************************************************/
@@ -359,7 +357,7 @@ void timer_clk()
 			if(--Pasos<=0) 
 			{
 				parar_clk_step();
-				StopPasos = true;
+				StopPasos = true;//Flag para que en el loop envie mensaje de stop
 			}
 		}
 		//Flanco de bajada
@@ -1153,6 +1151,9 @@ void pc_fotodiodo(void)
  * **********************************************************************/
 void pc_sensor_temperatura_humedad(void)
 {
+
+	pc_acelerometro(); return;
+
 	TEST_SENSORHT_1 //pin 30 digitalWrite(TEST_SENSORHT,HIGH);
 	LED3_1 //digitalWrite(LED3,HIGH);//Para test
 	if(BaseScpi.FinComando[0]!='?')  

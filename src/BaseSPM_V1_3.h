@@ -468,7 +468,7 @@ int contadorEnvios=0;
 String NombreDelSistema = "Base SPM"; //Puesto para depuración. Se puede quitar.
 SegaSCPI BaseScpi(Raiz,"Base SPM",ErroresBaseSPM);
 bool StopPasos=false; //Flag para informar de que se han dado los pasos pedidos
-char Version[]="Base SPM V1.2";//Las distintas "Bases SPM" pueden tener versión
+char Version[]="Base SPM V1.3";//Las distintas "Bases SPM" pueden tener versión
 //Variables para depuración. Activación con "depuracion" y puerto para depuración
 bool depuracion=false; //1 para hacer depuración del software. 0 servicio 
 //normal. El modo depuración se usa en la fase de desarrollo del software
