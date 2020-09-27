@@ -41,30 +41,39 @@
 	Ultimas modificaciones (experimental):
 	
 	-1.	He modificado las firmas de las cadenas. Ahora son dos mayúsculas 
-		salvo temperatura-humedad.
+		salvo temperatura-humedad que no lo he cambiado por compatibilidad.
 	-2.	El envío periódico de fotodiodo y acelerómetro tiene un parámetro, 
 		el número de envios.
 	-3. El sensor AHT10 se maneja con el i2c Wire1 directamente sin librería.
-	-4. He bajado el periodo de muestreo a 400us (2,5KHz). 
-	-5. Los 48V se activan o desactivan desde el PC o Android (experimental)
-	-6. He redefinido los pines DSP_CLK y DSP_48V 
+	-4  He añadido el sensor BME280 para sustituir al AHT10. Ahora los dos
+		sensores, acelerómetro y humedad/temperatura pueden ir en el mismo i2c
+		y van en el Wire. El Wire1 no se inicializa, asi el Serial3 está
+		disponible.
+	-5. He bajado el periodo de muestreo del fotodiodo a 400us (2,5KHz). 
+	-6. Los 48V se activan o desactivan desde el PC o Android (experimental)
+	-7. He redefinido los pines DSP_CLK y DSP_48V. Así:	 
 		#define DSP_CLK A8 //cambiado, antes era 5.16/09/2020
 		#define DSP_48V A9// cambiado, antes era 4.16/09/2020
 		Ahora las señales del DSP llegan a través de un integrado puesto
 		en el backplane que adminte señales del DSP de 5 y 3,3V y su
 		salida es de 3,3V.
 
+TO DO
+	-0. Antes de flasear para la base definitiva verificar que 
+		los baudios para Dulcinea son 57600 y para el bluetooth
+		según la base 9600 para la primera y 115200 el resto
+	
 
-	Tareas pendientes y correcciones
-	-1.	Es sensor  AHT10 tiene que estar solo en el I2C. Hay que cambiarlo.
-	-2. El Serial3 es incompatible con el uso del Wire1.
-	-3. Reconectar el Serial3 con el Serial. Este se puede utilizar aunque
-		sea el utilizado por el programing port. O utilizar solo el Wire
-		(no el Wire1) para todos los sensores.
-	-4.	Alimentar los sensores I2C con 3V3 voltios distintos del DUE.
+	-1.	Quitar el código de los sensores de humedad y temperatura obsoletos
+	-2. El Probar el Serial3 (es incompatible con el uso del Wire1).
+	-3. Reconectar el Serial3 con el Serial. 
+	-4. Probar el Seria con un Bluetooth, se puede utilizar aunque
+		sea el utilizado por el programing port. 
+	-5.	Alimentar los sensores I2C con 3V3 voltios distintos del DUE.
+	-6. Utilizar el sensor BME280 sin librería 
 
 	
-	Ultimos cambios en el código 16/09/2020
+	Ultimos cambios en el código 27/09/2020
 */
 /**************************************************************************
 	Copyright © 2020 Patricio Coronado
@@ -83,11 +92,7 @@
     along with BaseSPM.c  If not, see <http://www.gnu.org/licenses/>
 ***************************************************************************/	
 /*
-		TODO
-		Cambiar el AHT10.
-		Poner todos los sensores en el Wire (no Wire1)
-
-
+		
 	
 */
 /**********************************************************************/
@@ -97,6 +102,8 @@
 #include "SHT1x.h" //Sensor de humedad temperatura SHT11
 #include "DHT.h"//Sensor de humedad temperatura DHT22
 #include "SparkFun_MMA8452Q.h"//acelerómetro MMA8452Q
+#include "Adafruit_Sensor.h"
+#include "PacoAdafruit_BME280.h"//Modificado por mi
 #include "SegaSCPI.h"
 #include "BaseSPM_V1_3.h"//Constantes, tipos, prototipos y variables globales
 /***********************************************************************
@@ -183,14 +190,17 @@ void setup()
 		//Se utiliza un i2c para el acelerómetro y otro para el AHT10 porque son incompatibles
 		Wire.begin();
 		Wire.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
-		Wire1.begin();
-		Wire1.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
 		#define I2C_ACC Wire //i2c del acelerómetro scl y sda
+		#define I2C_SENSOR_HT Wire //o Wire1 i2c para el sensor de humedad y temperatura
+		// Inicializar el Wire 1 solo si es necesario
+		//Wire1.begin(); 
+		//Wire1.setClock(MAX_FREC_I2C);//Velocidad del I2C 0.4MHz 
 		#ifdef SENSOR_AHT10
-			#define I2C_AHT10 Wire1 //i2c sensor temperatura humedad AHT10 scl1 y sda1 
 			aht10Conectado = busca_aht10(); 
 		#endif
-		
+		#ifdef SENSOR_BME280
+			statusBME280 = bme.begin(0x76,&I2C_SENSOR_HT);  
+		#endif
 		//I2C.setClock(NORMAL_FREC_I2C);//Velocidad del I2C 0.1MHz 
   		AcelerometroConectado = busca_acelerometro();//Si hay acelerómetro pone AcelerometroConectado a true
 	}
@@ -237,11 +247,11 @@ void loop()
 	}// Escucha Serial2 del mando Bluetooth-Android
 	if (Serial2.available())
 	{
-		//digitalWrite(LED_BUILTIN,HIGH);  // TODO Quitar linea
+		//digitalWrite(LED_BUILTIN,HIGH);  
 		LED0_1 //digitalWrite(LED0,HIGH);
 		BaseScpi.scpi(&Serial2);	
 		LED0_0 //digitalWrite(LED0,LOW);
-		//digitalWrite(LED_BUILTIN,LOW);  // TODO Quitar linea 
+		//digitalWrite(LED_BUILTIN,LOW);  
 	}//SCPI_SERIAL2 //Escucha al mando
 	// Escucha el serial programing port
 	if (Serial.available())
@@ -750,20 +760,22 @@ bool busca_acelerometro(void)
 *	Busca e inicializa el sensor AHT10 en el I2C,
 	si está presente devuelve true, si no false.
 *************************************************************************/
+#ifdef SENSOR_AHT10
 bool busca_aht10(void)
 {
-	I2C_AHT10.beginTransmission(AHT10_ADD);
+	I2C_SENSOR_HT.beginTransmission(AHT10_ADD);
     uint8_t comandoCalibracion[3]={0xE1, 0x08, 0x00};
-	I2C_AHT10.write(comandoCalibracion, 3);
-    I2C_AHT10.endTransmission();
+	I2C_SENSOR_HT.write(comandoCalibracion, 3);
+    I2C_SENSOR_HT.endTransmission();
 	delay(500);
- 	I2C_AHT10.requestFrom(AHT10_ADD, 1);
-    int8_t resultado = I2C_AHT10.read();
+ 	I2C_SENSOR_HT.requestFrom(AHT10_ADD, 1);
+    int8_t resultado = I2C_SENSOR_HT.read();
     if((resultado & 0x68) == 0x08)
     	return true;
 	else
 		 return false;
 }
+#endif
 /************************************************************************
         Fin del conjunto de funciones que tocan y/o programan las 
 		variable y los pines del sistema.
@@ -1151,9 +1163,6 @@ void pc_fotodiodo(void)
  * **********************************************************************/
 void pc_sensor_temperatura_humedad(void)
 {
-
-	pc_acelerometro(); return;
-
 	TEST_SENSORHT_1 //pin 30 digitalWrite(TEST_SENSORHT,HIGH);
 	LED3_1 //digitalWrite(LED3,HIGH);//Para test
 	if(BaseScpi.FinComando[0]!='?')  
@@ -1188,7 +1197,6 @@ void pc_sensor_temperatura_humedad(void)
 	TIMER_ADC.stop();//Con el sensor DHT-22 se desactiva las interrupciones
 	//DHT dht(SEN_DATA, DHT22);
 	float Humedad = dht.readHumidity();
-  	//delay(100);// TO DO intentar bajar 
   	float Temperatura = dht.readTemperature();
   	sprintf(Datos,"%s %5.1f H%5.1f",FTEMPERATURA,Temperatura,Humedad);
 	// Check if any reads failed and exit early (to try again).
@@ -1206,10 +1214,10 @@ void pc_sensor_temperatura_humedad(void)
 		char Datos[128];
 		uint8_t rawData[6] = {0xFF, 0, 0, 0, 0, 0};// 0xFF es error
 		//Leee humedad y temperatura
-		I2C_AHT10.beginTransmission(AHT10_ADD);
+		I2C_SENSOR_HT.beginTransmission(AHT10_ADD);
 		uint8_t comando[3]={0xAC, 0x33, 0x00};
-		I2C_AHT10.write(comando,3); //Secuencia de comandos para leer la medida
-		if (I2C_AHT10.endTransmission(true) != 0)
+		I2C_SENSOR_HT.write(comando,3); //Secuencia de comandos para leer la medida
+		if (I2C_SENSOR_HT.endTransmission(true) != 0)
 		{
 			BaseScpi.errorscpi(25);
 			LED3_0//digitalWrite(LED3,LOW);
@@ -1217,9 +1225,9 @@ void pc_sensor_temperatura_humedad(void)
 			return;
 		}//Si falla la transmisión hay error
 		// lee 6 bytes del sensor
-		I2C_AHT10.requestFrom(AHT10_ADD, 6, true);//Solicita datos al dispositivo
-		if (I2C_AHT10.available() != 6){BaseScpi.errorscpi(25);}//Si no hay 6 datos sale con error
-		for (uint8_t i = 0; i < 6 ; i++){rawData[i] = I2C_AHT10.read();}//Lee en el array de datos
+		I2C_SENSOR_HT.requestFrom(AHT10_ADD, 6, true);//Solicita datos al dispositivo
+		if (I2C_SENSOR_HT.available() != 6){BaseScpi.errorscpi(25);}//Si no hay 6 datos sale con error
+		for (uint8_t i = 0; i < 6 ; i++){rawData[i] = I2C_SENSOR_HT.read();}//Lee en el array de datos
 		//Calcula la temperatura
 		uint32_t temp = ((uint32_t)(rawData[3] & 0x0F) << 16) | ((uint16_t) rawData[4] << 8) | rawData[5];
 		float Temperatura = (float)temp * 0.000191 - 50;
@@ -1234,7 +1242,18 @@ void pc_sensor_temperatura_humedad(void)
 	}
 	else BaseScpi.errorscpi(24);//Error no hay sensor conectado
  #endif
-	
+ 
+ #ifdef SENSOR_BME280
+	if(statusBME280)
+	{
+		char Datos[128];
+		float Temperatura,Humedad;
+		bme.readHumidityTemperature(&Temperatura,&Humedad);
+		sprintf(Datos,"%s %5.1f H%5.1f",FTEMPERATURA,Temperatura,Humedad);
+		Println(Datos);
+	}
+	else BaseScpi.errorscpi(24);//Error no hay sensor conectado
+ #endif	
 
 	LED3_0//digitalWrite(LED3,LOW);
 	TEST_SENSORHT_0 //digitalWrite(TEST_SENSORHT,LOW);

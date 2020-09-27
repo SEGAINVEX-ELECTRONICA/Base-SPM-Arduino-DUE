@@ -225,7 +225,6 @@ void activa_48V(void);//Función fs1: Activa la fuente de 48V
 void desactiva_48V(void);// Desactiva la fuente de 48V
 void programa_pasos(int);//Programa el número de pasos
 bool busca_acelerometro(void);//Busca el acelerómetro
-bool busca_aht10(void); //Busca el sensor de humedad temperatura AHT10
 /**********************************************************************
 					Funciones para test
 **********************************************************************/
@@ -452,11 +451,14 @@ int contadorEnvios=0;
 //Sensor humedad temperatura descomentar el que se use 
 //#define SENSOR_SHT11
 //#define SENSOR_DHT22
-#define SENSOR_AHT10
+#define SENSOR_BME280
+//#define SENSOR_AHT10
 //
+//Instanciación el objeto sensor de temperatura humedad
 #ifdef SENSOR_AHT10
 	#define AHT10_ADD 0X38
 	bool aht10Conectado = false;
+	bool busca_aht10(void); //Busca el sensor de humedad temperatura AHT10
 #endif
 #ifdef SENSOR_SHT11
 	SHT1x SHT11(SEN_DATA, SEN_CLK);
@@ -464,6 +466,15 @@ int contadorEnvios=0;
 #ifdef SENSOR_DHT22
 	DHT dht(SEN_DATA, DHT22);
 #endif
+
+#ifdef SENSOR_BME280
+	Adafruit_BME280 bme; // Instancia el sensor para I2C
+	unsigned statusBME280;
+#endif
+
+
+
+
 //Objeto SCPI
 String NombreDelSistema = "Base SPM"; //Puesto para depuración. Se puede quitar.
 SegaSCPI BaseScpi(Raiz,"Base SPM",ErroresBaseSPM);

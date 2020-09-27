@@ -4,20 +4,22 @@
 			"path": "."
 		},
 		{
-			"path": "..\\Base-AFM-Arduino-DUE-V1_1_Diego"
-		},
-		{
 			"name": "aht10",
 			"path": "..\\..\\aht10"
 		},
 		{
 			"name": "MMA8451",
 			"path": "..\\..\\MMA8451"
+		},
+		{
+			"name": "Test BMP280",
+			"path": "..\\..\\Test BMP280"
 		}
 	],
 	"settings": {
 		"files.associations": {
-			"BaseSPMpiezomotores.C": "cpp"
+			"BaseSPMpiezomotores.C": "cpp",
+			"initializer_list": "cpp"
 		}
 	}
 }
