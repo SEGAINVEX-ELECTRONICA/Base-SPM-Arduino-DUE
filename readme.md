@@ -7,10 +7,10 @@ Desarrollado por SEGAINVEX-Electrónica para el [Departamento de Física de la M
 Condensada de la UAM](https://www.fmc.uam.es/research/nano-spm-lab/)
 
 Cambios de esta versión respecto a la V1_2_0:
--1. Las funciones que envian datos del fotodiodo y el acelerómetro cambian.
-    Ahora el comando debe incluir el parámetro del número de muestar que se quieren recibir.
--2. Las firmas que preceden a las cadenas de datos que se envian por los puertos serie
-    han cambiado para compatibilizarlas con la APP que implementa el mando.    
+## -1. Las funciones que envian datos del fotodiodo y el acelerómetro cambian.
+##    Ahora el comando debe incluir el parámetro del número de muestar que se quieren recibir.
+## -2. Las firmas que preceden a las cadenas de datos que se envian por los puertos serie
+##    han cambiado para compatibilizarlas con la APP que implementa el mando.    
 
 
 ## 
