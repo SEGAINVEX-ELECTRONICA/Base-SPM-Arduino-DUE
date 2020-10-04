@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "..\\Base-AFM-Arduino-DUE-V1_1_Diego"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"BaseSPMpiezomotores.C": "cpp"
+		}
+	}
+}
