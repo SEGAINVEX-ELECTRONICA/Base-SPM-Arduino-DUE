@@ -26,14 +26,15 @@ Para utilizar user friendly los timers de Arduino
 
 Para el sensor de humedad y temperatura SHT11 (obsoleto)
 ## Librería para Arduino SparkFun_MMA8452Q_Arduino_Library-master
-
 Para utilizar un acelerómetro MMA8452Q para nivelar la cabeza.
 
-# [SOFTWARE DE PC](https://github.com/PatricioCoronado/BaseSPM_CVI)
+# [SOFTWARE DE PC](https://github.com/PatricioCoronado/Base-SPM-CVI)
 Desarrollado con LabWindos/CVI con licencia para SEGAINVEX-Electrónica.
 
+# [SOFTWARE PARA TABLET](https://github.com/PatricioCoronado/Base-SPM-tablet)
+Desarrollado con Android Studio 4.0.1
 
-# [MANUAL](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/version_1_2/ficheros/Manual.pdf)
+# [MANUAL](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_1_2/ficheros/Manual.pdf)
 ## 
 # IMAGENES DEL PROYECTO
 ##
