@@ -783,6 +783,12 @@ bool busca_aht10(void)
 /************************************************************************
 		FUNCIONES SCPI QUE RESPONDEN A COMANDOS DEL PC
 ************************************************************************/
+/**************************************************************************
+  Función que responde al comando del pc para programar: un motor, 
+  frecuencia, resolución, sentido, número de pasos y ponerlo en marcha.
+  Se ejecuta en 2.2ms si no cambia motor y 302ms si cambia motor
+  Comando  "MOT:MMP <MotorActivo Resolucion Frecuencia Sentido Pasos>"
+**************************************************************************/
 void pc_marcha_motor_pasos(void)
 {
 	unsigned int numParametros = 5;//Parametros esperados
@@ -1088,9 +1094,9 @@ void pc_onda(void)
 }
 /************************************************************************
  * Funciones para hacer que envíe las señales del diodo cada 
- * 100ms y para que deje de hacerlo.
+ * 200ms y para que deje de hacerlo.
  * Comandos MOT:IFO inicia y MOT:FFO finaliza
- * la función de interrupci´pn del timer es timer_foto_acel()
+ * la función de interrupción del timer es timer_foto_acel()
  * **********************************************************************/
 void pc_inicia_fotodiodo(void)
 {
@@ -1108,8 +1114,9 @@ void pc_fin_fotodiodo(void)
 }
 /************************************************************************
  * Funciones para hacer que envíe las señales del acelerometro cada 
- * 100ms y para que deje de hacerlo.
+ * 200ms y para que deje de hacerlo.
  * Comandos MOT:IAC inicia y MOT:FAC finaliza
+ * * la función de interrupción del timer es timer_foto_acel()
  * **********************************************************************/
 void pc_inicia_acelerometro(void)
 {
@@ -1138,7 +1145,7 @@ void pc_fotodiodo(void)
 		BaseScpi.errorscpi(4);//Parámetro inexistente
 		return;
 	}
-	char respuesta[32];
+	char respuesta[64];
 	
 	float fl,fn,sum;
 	unsigned int fuerzaNormal,fuerzaLateral,suma;
@@ -1269,7 +1276,7 @@ void pc_acelerometro(void)
 {
 	float EjeX,EjeY; //
 	//float EjeZ;
-	char respuesta[36];
+	char respuesta[64];
 	TEST_ACELEROMETRO_1
 	if(BaseScpi.FinComando[0]!='?')
 	{

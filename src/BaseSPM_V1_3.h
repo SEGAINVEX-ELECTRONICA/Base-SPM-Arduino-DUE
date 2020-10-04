@@ -442,6 +442,8 @@ bool AcelerometroConectado=false;
 bool FotoAcel;//Para indicar si se envian datos del fotodiodo o del acelerómetro
 #define ACELEROMETRO 1
 #define FOTODIODO 0
+#define T300ms 300000 
+#define T250ms 250000 
 #define T200ms 200000 
 #define T100ms 100000 
 #define T150ms 150000
