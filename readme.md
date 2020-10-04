@@ -32,7 +32,7 @@ Desarrollado con Android Studio 4.0.1
 ## 
 # IMAGENES DEL PROYECTO
 ##
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/V1_3/ficheros/imagen1.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/V1_3/ficheros/imagen2.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/V1_3/ficheros/imagen4.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/V1_3/ficheros/imagen3.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_3/ficheros/imagen1.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_3/ficheros/imagen2.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_3/ficheros/imagen4.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_3/ficheros/imagen3.png "Optional title")
