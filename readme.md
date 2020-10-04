@@ -34,11 +34,11 @@ Desarrollado con LabWindos/CVI con licencia para SEGAINVEX-Electrónica.
 # [SOFTWARE PARA TABLET](https://github.com/PatricioCoronado/Base-SPM-tablet)
 Desarrollado con Android Studio 4.0.1
 
-# [MANUAL](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_1_2/ficheros/Manual.pdf)
+# [MANUAL](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_2_1/ficheros/Manual.pdf)
 ## 
 # IMAGENES DEL PROYECTO
 ##
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/version_1_2/ficheros/imagen1.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/version_1_2/ficheros/imagen2.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/version_1_2/ficheros/imagen4.png "Optional title")
-![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE-V1.2/blob/version_1_2/ficheros/imagen3.png "Optional title")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_2_1/ficheros/imagen1.png "primer prototipo")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_2_1/ficheros/imagen2.png "PCB_A")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_2_1/ficheros/imagen4.png "backplane")
+![Alt text](https://github.com/PatricioCoronado/Base-SPM-Arduino-DUE/blob/V1_2_1/ficheros/imagen3.png "sistema midiendo")
