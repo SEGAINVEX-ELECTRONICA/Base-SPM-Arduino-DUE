@@ -214,7 +214,8 @@ void setup()
 		TIMER_ADC.attachInterrupt(timer_ADC);
 		TIMER_FOTO_ACEL.attachInterrupt(timer_foto_acel);
 		//TIMER_ADC.start(TS_ADC_500us); //Arranca el timer del ADC
-		TIMER_ADC.start(TS_ADC_400us); //Arranca el timer del ADC
+		TIMER_ADC.start(TS_ADC_400us); //Arranca el timer del ADC FS=1/(4e-4)=2,5KHz
+		
 	}// Fin convertidor AD, Timers e interrupciones externas -----------------
 }
 /***********************************************************************
@@ -300,16 +301,23 @@ void timer_foto_acel()
 	char respuesta[64];
 	if(FotoAcel==FOTODIODO)
 	{
+
+		
 		LED5_1
 		TEST_FOTODIODO_1 //PIN 38
 		float fl,fn,sum;
 		unsigned int fuerzaNormal,fuerzaLateral,suma;
+		//Cálculo de valores
 		fuerzaNormal=FuerzaNormal.media();
-		fn=mFotoDiodo*fuerzaNormal+bFotoDiodo+0.0015;
+		fn=mFn*fuerzaNormal+b_fn;//Calibrado
+		//fn=mFotoDiodo*fuerzaNormal+bFotoDiodo; //Sin calibrar
 		fuerzaLateral=FuerzaLateral.media();
-		fl=mFotoDiodo*fuerzaLateral+bFotoDiodo+0.015;
+		fl=mFl*fuerzaLateral+b_fl;//Calibrado
+		//fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;//Sin calibrar
 		suma=Suma.media();
-		sum=mFotoDiodo*suma+bFotoDiodo-0.08;
+		sum=mSum*suma+b_sum;//Calibrado
+		//sum=mFotoDiodo*suma+bFotoDiodo;//Sin calibrar
+		//Fin cálculo de valores
 		sprintf(respuesta,"%s %.2f %.2f %.2f",FFOTODIODO,fn,fl,sum);
 		//sprintf(respuesta,"%s %f %f %f",FFOTODIODO,fn,fl,sum);
 		Println(respuesta);
@@ -1104,7 +1112,7 @@ void pc_inicia_fotodiodo(void)
 	//Lee el número de envios a realizar
 	if (sscanf(BaseScpi.FinComando,"%u",&envios)==1)
 		contadorEnvios=envios; //Inicaliza el contador de envios a realizar;
-	else contadorEnvios=1;//Si no envía el número de envios se realiza 1;	
+	else contadorEnvios=1;//Si no envía el número de envios se realiza un solo envío;	
 	FotoAcel = FOTODIODO;
 	TIMER_FOTO_ACEL.start(T200ms);//200ms	
 }
@@ -1149,14 +1157,19 @@ void pc_fotodiodo(void)
 	
 	float fl,fn,sum;
 	unsigned int fuerzaNormal,fuerzaLateral,suma;
+	
+	//Cálculo de valores
 	fuerzaNormal=FuerzaNormal.media();
-	fn=mFotoDiodo*fuerzaNormal+bFotoDiodo;
-	//fn=3.3*fuerzaNormal/4096;
+	fn=mFn*fuerzaNormal+b_fn;//Calibrado
+	//fn=mFotoDiodo*fuerzaNormal+bFotoDiodo; //Sin calibrar
 	fuerzaLateral=FuerzaLateral.media();
-	fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;
-	//fl=3.3*fuerzaLateral/4096;
+	fl=mFl*fuerzaLateral+b_fl;//Calibrado
+	//fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;//Sin calibrar
 	suma=Suma.media();
-	sum=mFotoDiodo*suma+bFotoDiodo;
+	sum=mSum*suma+b_sum;//Calibrado
+	//sum=mFotoDiodo*suma+bFotoDiodo;//Sin calibrar
+	//Fin cálculo de valores
+	
 	sprintf(respuesta,"%s %.2f %.2f %.2f",FFOTODIODO,fn,fl,sum);
 	Println(respuesta);
 }
@@ -1395,13 +1408,17 @@ void  bluetooth_estado(void)
 	char respuesta[256];//Si pongo la cadena más corta no cabe todo
 	float fl,fn,sum;
 	unsigned int fuerzaNormal,fuerzaLateral,suma,emp;
-	//calcula las señales con ajuste de offset y ganancia 
+	//Cálculo de valores
 	fuerzaNormal=FuerzaNormal.media();
-	fn=mFotoDiodo*fuerzaNormal+bFotoDiodo;
+	fn=mFn*fuerzaNormal+b_fn;//Calibrado
+	//fn=mFotoDiodo*fuerzaNormal+bFotoDiodo; //Sin calibrar
 	fuerzaLateral=FuerzaLateral.media();
-	fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;
+	fl=mFl*fuerzaLateral+b_fl;//Calibrado
+	//fl=mFotoDiodo*fuerzaLateral+bFotoDiodo;//Sin calibrar
 	suma=Suma.media();
-	sum=mFotoDiodo*suma+bFotoDiodo;
+	sum=mSum*suma+b_sum;//Calibrado
+	//sum=mFotoDiodo*suma+bFotoDiodo;//Sin calibrar
+	//Fin cálculo de valores
 	if(EstadoMarchaParo) emp=10;
 	else emp=5;
 	sprintf	(respuesta,"%s %.2f %.2f %.2f %u %u",FBLUETOOTHESTADO,fn,fl,sum,emp,Pasos);

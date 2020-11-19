@@ -4,16 +4,8 @@
 			"path": "."
 		},
 		{
-			"name": "aht10",
-			"path": "..\\..\\aht10"
-		},
-		{
-			"name": "MMA8451",
-			"path": "..\\..\\MMA8451"
-		},
-		{
-			"name": "Test BMP280",
-			"path": "..\\..\\Test BMP280"
+			"name": "Dulcinea_Simulador_Serie",
+			"path": "..\\..\\Dulcinea_Simulador_Serie"
 		}
 	],
 	"settings": {

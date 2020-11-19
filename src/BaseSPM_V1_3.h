@@ -9,7 +9,7 @@
 	Editado el 17/07/2020
 */
 #include <Arduino.h>
-#include "Muestras.h" //Array para guardar muestras del ADC
+#include "Muestras.h" //Alase ra gestras del ADC
 /******************************************************************
 		Definición de pines
 *******************************************************************/
@@ -425,9 +425,17 @@ String ErroresBaseSPM[]=
 //Fotodiodo. Pendiente y término independiente para ajustar la respuesta del ADC 
 // float Vfotod=mFotoDiodo*ADC+bFotodiodo
 // Ajuste para una Vref de 3.3V (por defecto) Si se cambia a externa 3V hay que reajustar 
-// los valores de mFotoDiodo y bFotodiodo (ver cuaderno Patricio 9, pg 17 )
-float mFotoDiodo =-0.007122;
-float bFotoDiodo = 13.26;
+// los valores de mFotoDiodo y bFotodiodo (ver cuaderno Patricio 9, pg 19 y 33)
+float mFotoDiodo =-0.007122; //Valor calculado
+float bFotoDiodo = 13.26; //Valor calculado
+//Parámetro b de calibración del fotodiodo. Sustituyen a mFotoDiodo
+float mFn =-0.00705; //Valor calculado
+float mFl =-0.00702; //Valor calculado
+float mSum =-0.0071; //Valor calculado
+//Parámetro b de calibración del fotodiodo. Sustituyen a bFotoDiodo
+float b_fn = 12.908;
+float b_fl = 12.797;
+float b_sum = 12.9646;
 //Acelerómetro MMA8452
 MMA8452Q Acelerometro;
 bool AcelerometroConectado=false;
